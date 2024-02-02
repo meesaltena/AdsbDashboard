@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AdsbMudBlazor.Service
 {
-    public class FlightFetcher(IHttpClientFactory httpClientFactory, ILogger logger, IConfiguration configuration) : IFlightFetcher
+    public class FlightFetcher(IHttpClientFactory httpClientFactory, ILogger<FlightFetcher> logger, IConfiguration configuration) : IFlightFetcher
     {
         public IEnumerable<Flight> GetFlightsFromFeeder()
         {

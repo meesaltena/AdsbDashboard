@@ -5,6 +5,9 @@ services:
     volumes:
       - adsbmudblazorvolume:/app
       - /appsettings.json:/app/appsettings.json
+    ports:
+    - "5000:5000"
+    - "5001:5001"
 volumes:
   adsbmudblazorvolume:
     driver: local

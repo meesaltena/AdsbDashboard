@@ -50,12 +50,21 @@ else
     private int ticksTaken;
     protected override async Task OnInitializedAsync()
     {
-        var t1 = Environment.TickCount;
-        flightCount = flightsService.GetNonEnumeratedFlightCount();
-        doneLoadingCount = true;
-        planes = await flightsService.GetPlanesAsync();
-        var t2 = Environment.TickCount;
-        ticksTaken = t2 - t1;
+        try
+        {
+            var t1 = Environment.TickCount;
+            flightCount = flightsService.GetNonEnumeratedFlightCount();
+            doneLoadingCount = true;
+            planes = await flightsService.GetPlanesAsync();
+            var t2 = Environment.TickCount;
+            ticksTaken = t2 - t1;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
 
     }
 }

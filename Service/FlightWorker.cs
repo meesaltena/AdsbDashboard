@@ -13,21 +13,18 @@ namespace AdsbMudBlazor.Service
         private readonly IDbContextFactory<FlightDbContext> _contextFactory;
         private readonly ILogger _logger;
         private readonly IConfiguration _configuration;
-        private readonly IFlightFetcher _flightFetcher;
 
         public FlightWorker(IDbContextFactory<FlightDbContext> contextFactory,
             IHttpClientFactory httpClientFactory, 
             IServiceScopeFactory serviceScopeFactory, 
             ILogger<FlightWorker> logger, 
-            IConfiguration configuration,
-            IFlightFetcher flightFetcher)
+            IConfiguration configuration)
         {
             _contextFactory = contextFactory;
             _httpClientFactory = httpClientFactory;
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
             _configuration = configuration;
-            _flightFetcher = flightFetcher;
         }
 
         private async Task CreateDb()
@@ -55,8 +52,9 @@ namespace AdsbMudBlazor.Service
 
                 try
                 {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var _flightFetcher = scope.ServiceProvider.GetRequiredService<IFlightFetcher>();
                     newFlights = await _flightFetcher.GetFlightsFromFeederAsync();
-
                 }
                 catch (Exception ex)
                 {
