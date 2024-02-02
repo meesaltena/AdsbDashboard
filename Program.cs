@@ -12,11 +12,11 @@ namespace AdsbMudBlazor
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            builder.WebHost.ConfigureKestrel((context, serverOptions) =>
-            {
-                serverOptions.Listen(IPAddress.Any, 5000);
-                //serverOptions.Listen(IPAddress.Any, 5001);
-            });
+            //builder.WebHost.ConfigureKestrel((context, serverOptions) =>
+            //{
+            //    serverOptions.Listen(IPAddress.Any, 5000);
+            //    //serverOptions.Listen(IPAddress.Any, 5001);
+            //});
 
             builder.Logging.AddConsole();
             // Add services to the container.
