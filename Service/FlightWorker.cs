@@ -13,23 +13,29 @@ namespace AdsbMudBlazor.Service
         private readonly IDbContextFactory<FlightDbContext> _contextFactory;
         private readonly ILogger _logger;
         private readonly IConfiguration _configuration;
+        private readonly IFlightFetcher _flightFetcher;
 
-        public FlightWorker(IDbContextFactory<FlightDbContext> contextFactory, IHttpClientFactory httpClientFactory, IServiceScopeFactory serviceScopeFactory, ILogger<FlightWorker> logger, IConfiguration configuration)
+        public FlightWorker(IDbContextFactory<FlightDbContext> contextFactory,
+            IHttpClientFactory httpClientFactory, 
+            IServiceScopeFactory serviceScopeFactory, 
+            ILogger<FlightWorker> logger, 
+            IConfiguration configuration,
+            IFlightFetcher flightFetcher)
         {
             _contextFactory = contextFactory;
             _httpClientFactory = httpClientFactory;
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
-            _configuration = configuration.GetSection("Feeder");
-            CreateDb();
+            _configuration = configuration;
+            _flightFetcher = flightFetcher;
         }
 
-        public void CreateDb()
+        private async Task CreateDb()
         {
             try
             {
-                var dbContext = _contextFactory.CreateDbContext();
-                dbContext.Database.EnsureCreated();
+                var dbContext = await _contextFactory.CreateDbContextAsync();
+                await dbContext.Database.EnsureCreatedAsync();
             }
             catch (Exception e)
             {
@@ -41,11 +47,24 @@ namespace AdsbMudBlazor.Service
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            await CreateDb();
+
             while (!stoppingToken.IsCancellationRequested)
             {
+                IEnumerable<Flight> newFlights = new List<Flight>();
+
                 try
                 {
-                    List<Flight> newFlights = GetFlightsFromFeeder().ToList();
+                    newFlights = await _flightFetcher.GetFlightsFromFeederAsync();
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"An error occurred: {ex.Message}");
+                }
+
+                try
+                {
 
                     await using (var dbContext = await _contextFactory.CreateDbContextAsync(stoppingToken))
                     {
@@ -69,14 +88,14 @@ namespace AdsbMudBlazor.Service
 
                         await dbContext.SaveChangesAsync(stoppingToken);
 
-                        _logger.LogInformation($"Added planes {planesNotExisting.Count()}, added flights: {flightsNotExisting.Count()}");
+                        //_logger.LogInformation($"Added planes {planesNotExisting.Count()}, added flights: {flightsNotExisting.Count()}");
                     }
 
                     //_logger.LogInformation("Flights saved to the database.");
 
                     // Sleep for 5 minutes before fetching data again
                     //await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
-                    await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                    await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
                 }
                 catch (Exception ex)
                 {
@@ -86,33 +105,6 @@ namespace AdsbMudBlazor.Service
             }
         }
 
-        public IEnumerable<Flight> GetFlightsFromFeeder()
-        {
-            var client = _httpClientFactory.CreateClient();
-            var response = client.GetStringAsync(_configuration["FeederUrl"]).Result;
 
-            var document = JsonDocument.Parse(response);
-            var root = document.RootElement;
-
-            List<Flight> flights = new List<Flight>();
-            foreach (var property in root.EnumerateObject())
-            {
-                var flightData = property.Value;
-                var flight = new Flight
-                {
-                    ModeS = flightData[0].GetString()!,
-                    Callsign = flightData[16].GetString()!,
-                    Lat = flightData[1].GetDouble().ToString(CultureInfo.InvariantCulture)!,
-                    Long = flightData[2].GetDouble().ToString(CultureInfo.InvariantCulture)!,
-                    Alt = flightData[4].GetInt32().ToString(),
-                    Squawk = flightData[6].GetString()!
-                };
-                flights.Add(flight);
-
-                //_logger.LogInformation($"ModeS: {flight.ModeS}, Callsign: {flight.Callsign}, Lat: {flight.Lat}, Long: {flight.Long}, Alt: {flight.Alt}, SQW: {flight.Squawk}");
-            }
-
-            return flights;
-        }
     }
 }

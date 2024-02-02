@@ -1,6 +1,7 @@
 using AdsbMudBlazor.Components;
 using AdsbMudBlazor.Data;
 using AdsbMudBlazor.Service;
+using AdsbMudBlazor.Utility;
 using MudBlazor.Services;
 
 namespace AdsbMudBlazor
@@ -10,18 +11,21 @@ namespace AdsbMudBlazor
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
+            builder.Logging.AddConsole();
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
-
             builder.Services
                 .AddDbContextFactory<FlightDbContext>()
+                .AddScoped<IFlightFetcher, FlightFetcher>()
                 .AddHostedService<FlightWorker>()
+                .AddScoped<ICoordUtils, CoordUtils>()
                 .AddScoped<FlightsService>()
                 .AddScoped<FeederService>()
                 .AddHttpClient();
 
+            AppDomain currDomain = AppDomain.CurrentDomain;
+            currDomain.UnhandledException += new UnhandledExceptionEventHandler(UnhandledExceptionHandler);
 
             builder.Services.AddMudServices();
             
@@ -44,6 +48,13 @@ namespace AdsbMudBlazor
                 .AddInteractiveServerRenderMode();
 
             app.Run();
+        }
+
+        static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs args)
+        {
+            Exception e = (Exception)args.ExceptionObject;
+            Console.WriteLine("MyHandler caught : " + e.Message);
+            Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
         }
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AdsbMudBlazor.Service
 {
-    public class FlightsService(IDbContextFactory<FlightDbContext> contextFactory, ILogger<FlightWorker> logger)
+    public class FlightsService(IDbContextFactory<FlightDbContext> contextFactory, ILogger<FlightsService> logger)
     {
         private readonly ILogger _logger = logger;
 
