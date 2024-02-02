@@ -15,7 +15,7 @@ namespace AdsbMudBlazor
             builder.WebHost.ConfigureKestrel((context, serverOptions) =>
             {
                 serverOptions.Listen(IPAddress.Any, 5000);
-                serverOptions.Listen(IPAddress.Any, 5001);
+                //serverOptions.Listen(IPAddress.Any, 5001);
             });
 
             builder.Logging.AddConsole();
