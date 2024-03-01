@@ -28,13 +28,16 @@ namespace AdsbMudBlazor
                 .AddScoped<ICoordUtils, CoordUtils>()
                 .AddScoped<FlightsService>()
                 .AddScoped<FeederService>()
-                .AddHttpClient();
+                .AddHttpClient<IFlightFetcher, FlightFetcher>(client =>
+                {
+                    client.BaseAddress = new Uri(builder.Configuration["FeederOptions:FeederUrl"] ?? throw new ArgumentNullException());
+                });
 
             AppDomain currDomain = AppDomain.CurrentDomain;
             currDomain.UnhandledException += new UnhandledExceptionEventHandler(UnhandledExceptionHandler);
 
             builder.Services.AddMudServices();
-            
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
