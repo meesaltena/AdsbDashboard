@@ -77,25 +77,38 @@ namespace AdsbMudBlazor.Service
 
         private async Task UpdateFlightsSimple(CancellationToken token)
         {
-            using IServiceScope scope = _serviceScopeFactory.CreateScope();
 
-            IFlightFetcher _flightFetcher = scope.ServiceProvider.GetRequiredService<IFlightFetcher>();
-
-            var newFlights = await _flightFetcher.GetFlightsFromFeederAsync(token);
-
-            await using (var dbContext = await _contextFactory.CreateDbContextAsync(token))
+            try
             {
-                await dbContext.Flights.AddRangeAsync(newFlights, cancellationToken:token);
-                var flightsInserted = await dbContext.SaveChangesAsync(token);
+                using IServiceScope scope = _serviceScopeFactory.CreateScope();
 
-                await dbContext.Planes.AddRangeAsync(newFlights.Select(p => new Plane()
+                IFlightFetcher _flightFetcher = scope.ServiceProvider.GetRequiredService<IFlightFetcher>();
+
+                var currentFlights = await _flightFetcher.GetFlightsFromFeederAsync(token);
+
+                await using (var dbContext = await _contextFactory.CreateDbContextAsync(token))
                 {
-                    ModeS = p.ModeS,
-                    LastSeen = DateTime.UtcNow,
-                }));
-                var planesInserted = await dbContext.SaveChangesAsync(token);
 
-                _logger.LogInformation($"--------------- flightsInserted: {flightsInserted} planesInserted: {planesInserted}");
+                    var alreadyExistingFlights = dbContext.Flights.Where(flight => currentFlights.Any(cf => cf.Equals(flight)));
+
+                    _logger.LogInformation($"Already exising: {alreadyExistingFlights.Count()}");
+                    //await dbContext.Flights.AddRangeAsync(currentFlights, cancellationToken: token);
+                    //var flightsInserted = await dbContext.SaveChangesAsync(token);
+
+                    //await dbContext.Planes.AddRangeAsync(currentFlights.Select(p => new Plane()
+                    //{
+                    //    ModeS = p.ModeS,
+                    //    LastSeen = DateTime.UtcNow,
+                    //}));
+                    //var planesInserted = await dbContext.SaveChangesAsync(token);
+
+                    //_logger.LogInformation($"--------------- flightsInserted: {flightsInserted} planesInserted: {planesInserted}");
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"FlightWorker UpdateFlightsSimple: An error occurred: {e.Message}");
+                throw;
             }
 
         }

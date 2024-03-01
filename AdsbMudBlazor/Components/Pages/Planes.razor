@@ -10,7 +10,7 @@
 
 <MudText Typo="Typo.h4" GutterBottom="true">Planes</MudText>
 <MudText Class="mb-8">Total planes tracked: @flightCount</MudText>
-<MudText Class="mb-8">Ticks taken: @ticksTaken</MudText>
+<MudText Class="mb-8">Ticks (ms) taken: @ticksTaken</MudText>
 
 @if (!doneLoadingCount)
 {
@@ -30,11 +30,13 @@ else
     <MudTable Items="planes" Hover="true" SortLabel="Sort By" Elevation="0">
         <HeaderContent>
             <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Plane, object>(x=>x.ModeS)">ICAO</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Plane, object>(x=>x.LastSeen)">Last Seen</MudTableSortLabel></MudTh>
             @* <MudTh><MudTableSortLabel SortBy="new Func<Plane, object>(x=>x.Callsign)">Callsign</MudTableSortLabel></MudTh> *@
 
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="ICAO">@context.ModeS</MudTd>
+            <MudTd DataLabel="Last Seen">@context.LastSeen</MudTd>
             @* <MudTd DataLabel="Callsign">@context.Callsign</MudTd> *@
         </RowTemplate>
         <PagerContent>
