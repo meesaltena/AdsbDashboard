@@ -25,6 +25,7 @@ namespace AdsbMudBlazor.Utility
         }
 
         public double GetDistance(double planeLat, double planeLong) => GetDistance(_options.FeederLat, _options.FeederLong, planeLat, planeLong);
+        public double GetDistanceOrZero(double planeLat, double planeLong) => (planeLat != 0 && planeLong != 0) ? GetDistance(_options.FeederLat, _options.FeederLong, planeLat, planeLong) : 0;
 
     }
 }

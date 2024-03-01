@@ -87,8 +87,9 @@ namespace AdsbMudBlazor.Service
                 var currentFlights = await _flightFetcher.GetFlightsFromFeederAsync(token);
 
 
-                await InsertOrUpdateFlights(currentFlights, token, coordUtils);
+                await InsertOrUpdateFlights(currentFlights, token);
                 await InsertOrUpdatePlanes(currentFlights, token);
+                await UpdateFlightDistance(currentFlights, token, coordUtils);
 
             }
             catch (Exception e)
@@ -99,26 +100,30 @@ namespace AdsbMudBlazor.Service
 
         }
 
-        private async Task InsertOrUpdateFlights(IEnumerable<Flight> flights, CancellationToken token, ICoordUtils coordUtils)
+        private async Task UpdateFlightDistance(IEnumerable<Flight> flights, CancellationToken token, ICoordUtils coordUtils)
         {
             await using (var dbContext = await _contextFactory.CreateDbContextAsync(token))
             {
-
-                IEnumerable<Flight> notAlreadyExistingFlights = flights
-                    .Where(flight => !dbContext.Flights.Any(cf => cf.Equals(flight)))
-                    .Select(f =>
+                foreach (var flight in flights)
                 {
-                    if (f.Lat != 0 && f.Long != 0)
-                    {
-                        f.Distance = coordUtils.GetDistance(f.Lat, f.Long);
-                    }
-                    return f;
-                });
+                    IQueryable<Flight> match = dbContext.Flights.Where(fl => fl.Equals(flight));
 
+                    Debug.Assert(match.Count() > 1);
+
+                    await match.ExecuteUpdateAsync(setters => setters
+                        .SetProperty(f => f.Distance, f => (f.Lat != 0 && f.Long != 0) 
+                            ? coordUtils.GetDistance(f.Lat, f.Long) : 0));
+                }
+            }
+        }
+        private async Task InsertOrUpdateFlights(IEnumerable<Flight> flights, CancellationToken token)
+        {
+            await using (var dbContext = await _contextFactory.CreateDbContextAsync(token))
+            {
+                IEnumerable<Flight> notAlreadyExistingFlights = flights.Where(flight => !dbContext.Flights.Any(cf => cf.Equals(flight)));
 
                 await dbContext.Flights.AddRangeAsync(notAlreadyExistingFlights, cancellationToken: token);
                 var flightsInserted = await dbContext.SaveChangesAsync(token);
-
                 _logger.LogInformation($"Not already existing: {notAlreadyExistingFlights.Count()}. Already existing: {dbContext.Flights.Count() - notAlreadyExistingFlights.Count()}, inserted: {flightsInserted}");
 
             }
