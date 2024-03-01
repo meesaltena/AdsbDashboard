@@ -9,8 +9,9 @@
 <PageTitle>Planes </PageTitle>
 
 <MudText Typo="Typo.h4" GutterBottom="true">Planes</MudText>
-<MudText Class="mb-8">Total planes tracked: @flightCount</MudText>
-<MudText Class="mb-8">Ticks (ms) taken: @ticksTaken</MudText>
+<MudText>Total flight messages: @flightCount</MudText>
+<MudText>Total unique planes tracked: @uniquePlanes</MudText>
+<MudText>Ticks (ms) taken: @ticksTaken</MudText>
 
 @if (!doneLoadingCount)
 {
@@ -50,12 +51,15 @@ else
     private bool doneLoadingCount = false;
     private int flightCount;
     private int ticksTaken;
+    private int uniquePlanes;
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
             var t1 = Environment.TickCount;
             flightCount = flightsService.GetNonEnumeratedFlightCount();
+            uniquePlanes = await flightsService.GetDistinctPlanes();
             doneLoadingCount = true;
             planes = await flightsService.GetPlanesAsync();
             var t2 = Environment.TickCount;
@@ -66,7 +70,5 @@ else
             Console.WriteLine(e);
             throw;
         }
-
-
     }
 }

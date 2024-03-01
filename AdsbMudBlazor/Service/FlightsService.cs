@@ -92,6 +92,24 @@ namespace AdsbMudBlazor.Service
             }
         }
 
+        public async Task<int> GetDistinctPlanes()
+        {
+            try
+            {
+                using var context = contextFactory.CreateDbContext();
+                if (context.Planes.TryGetNonEnumeratedCount(out int count))
+                {
+                    return count;
+                }
+                return await context.Planes.CountAsync();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+                throw;
+            }
+        }
+
         public int GetNonEnumeratedFlightCount()
         {
             try

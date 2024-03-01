@@ -88,21 +88,45 @@ namespace AdsbMudBlazor.Service
 
                 await using (var dbContext = await _contextFactory.CreateDbContextAsync(token))
                 {
+                    var notAlreadyExistingFlights = currentFlights.Where(flight => !dbContext.Flights.Any(cf => cf.Equals(flight)));
 
-                    var alreadyExistingFlights = dbContext.Flights.Where(flight => currentFlights.Any(cf => cf.Equals(flight)));
+                    _logger.LogInformation($"Not already exising: {notAlreadyExistingFlights.Count()}. Already existing: {dbContext.Flights.Count() - notAlreadyExistingFlights.Count()}");
 
-                    _logger.LogInformation($"Already exising: {alreadyExistingFlights.Count()}");
-                    //await dbContext.Flights.AddRangeAsync(currentFlights, cancellationToken: token);
-                    //var flightsInserted = await dbContext.SaveChangesAsync(token);
+                    await dbContext.Flights.AddRangeAsync(notAlreadyExistingFlights, cancellationToken: token);
+                    var flightsInserted = await dbContext.SaveChangesAsync(token);
 
-                    //await dbContext.Planes.AddRangeAsync(currentFlights.Select(p => new Plane()
-                    //{
-                    //    ModeS = p.ModeS,
-                    //    LastSeen = DateTime.UtcNow,
-                    //}));
-                    //var planesInserted = await dbContext.SaveChangesAsync(token);
 
-                    //_logger.LogInformation($"--------------- flightsInserted: {flightsInserted} planesInserted: {planesInserted}");
+                    IEnumerable<string> planeList = currentFlights.Select(p => p.ModeS);
+
+                    int planesInserted = 0;
+                    int planesUpdated = 0;
+                    foreach (var plane in planeList)
+                    {
+                        var match = dbContext.Planes.Where(p => p.ModeS == plane);
+                        //TODO remove foreach, this should only ever return 0 or 1 result
+                        if (match.Any())
+                        {
+                            Debug.Assert(match.Count() > 0);
+                            foreach (Plane p in match)
+                            {
+                                planesUpdated++;
+                                p.LastSeen = DateTime.UtcNow;
+                            }
+                        }
+                        else
+                        {
+                            dbContext.Planes.Add(
+                                new Plane()
+                                {
+                                    ModeS = plane,
+                                    LastSeen = DateTime.UtcNow
+                                });
+                            planesInserted++;
+                        }
+                    }
+                    var changes = await dbContext.SaveChangesAsync(token);
+
+                    _logger.LogInformation($"--------------- flightsInserted: {flightsInserted}, planesInserted: {planesInserted}, planesUpdated: {planesUpdated}");
                 }
             }
             catch (Exception e)
