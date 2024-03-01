@@ -368,4 +368,5 @@ FodyWeavers.xsd
 *.db-wal
 /appsettings.json
 *.diagsession
-/AdsbMudBlazor/appsettings.json
+**/*.appsettings.json
+*appsettings.json
