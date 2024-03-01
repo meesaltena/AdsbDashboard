@@ -20,6 +20,25 @@ namespace AdsbMudBlazor.Service
             _options = options.Value;
         }
 
+        public async Task<int> GetCurrentlyTrackedFlightsCount()
+        {
+            try
+            {
+                using HttpClient client = _httpClientFactory.CreateClient();
+                var response = await client.GetStreamAsync(_options.FeederUrl);
+
+                var document = await JsonDocument.ParseAsync(response);
+                var root = document.RootElement;
+
+                return root.EnumerateObject().Count();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
         public async Task<IEnumerable<Flight>> GetFlightsFromFeederAsync()
         {
             List<Flight> flights = new List<Flight>();

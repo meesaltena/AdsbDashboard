@@ -9,31 +9,28 @@ namespace AdsbMudBlazor.Service
 {
     public class FlightWorker : BackgroundService
     {
-        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IDbContextFactory<FlightDbContext> _contextFactory;
         private readonly ILogger _logger;
         private readonly FeederOptions _options;
 
         public FlightWorker(IDbContextFactory<FlightDbContext> contextFactory,
-            IHttpClientFactory httpClientFactory, 
             IServiceScopeFactory serviceScopeFactory, 
             ILogger<FlightWorker> logger, 
             IOptions<FeederOptions> options)
         {
             _contextFactory = contextFactory;
-            _httpClientFactory = httpClientFactory;
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
             _options = options.Value;
         }
 
-        private async Task CreateDb()
+        private async Task<bool> CreateDb()
         {
             try
             {
                 var dbContext = await _contextFactory.CreateDbContextAsync();
-                await dbContext.Database.EnsureCreatedAsync();
+                return await dbContext.Database.EnsureCreatedAsync();
             }
             catch (Exception e)
             {
@@ -45,7 +42,7 @@ namespace AdsbMudBlazor.Service
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await CreateDb();
+            if (!await CreateDb()) return;
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -64,7 +61,6 @@ namespace AdsbMudBlazor.Service
 
                 try
                 {
-
                     await using (var dbContext = await _contextFactory.CreateDbContextAsync(stoppingToken))
                     {
 
@@ -84,15 +80,9 @@ namespace AdsbMudBlazor.Service
 
                         dbContext.Planes.AddRange(planesNotExisting);
 
-                        await dbContext.SaveChangesAsync(stoppingToken);
-
-                        //_logger.LogInformation($"Added planes {planesNotExisting.Count()}, added flights: {flightsNotExisting.Count()}");
+                        await dbContext.SaveChangesAsync(stoppingToken);                 
                     }
 
-                    //_logger.LogInformation("Flights saved to the database.");
-
-                    // Sleep for 5 minutes before fetching data again
-                    //await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
                     await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
                 }
                 catch (Exception ex)

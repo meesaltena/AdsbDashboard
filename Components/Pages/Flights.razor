@@ -22,9 +22,7 @@
 }
 else
 {
-    <MudText Class="mb-8">Total flights currently being tracked by
-        <MudLink Href="@($"https://www.flightradar24.com/account/feed-stats/?id={feederService.FeederId}")">@feederService.FeederName</MudLink>: @flights.Count()
-    </MudText>
+    <CurrentlyTracked/>
 
     <MudTable Items="flights" Hover="true" SortLabel="Sort By" Elevation="0">
         <HeaderContent>
