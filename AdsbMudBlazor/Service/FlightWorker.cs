@@ -56,8 +56,8 @@ namespace AdsbMudBlazor.Service
                     var startTime = DateTime.Now;
                     var endTime = startTime.AddMilliseconds((1000 * _options.WorkerInterval));
 
-                    await UpdateFlightsSimple(stoppingToken);
-                    //await UpdateFlights(stoppingToken);
+                    await UpdateFlightsAndPlanes(stoppingToken);
+
 
                     var timeToDelayLeft = endTime.Subtract(startTime);
                     timeToDelayLeft = (timeToDelayLeft < TimeSpan.FromSeconds(5)) ? TimeSpan.FromSeconds(5) : timeToDelayLeft;
@@ -75,7 +75,7 @@ namespace AdsbMudBlazor.Service
             _logger.LogInformation($"FlightWorker stopping!");
         }
 
-        private async Task UpdateFlightsSimple(CancellationToken token)
+        private async Task UpdateFlightsAndPlanes(CancellationToken token)
         {
 
             try
@@ -83,51 +83,13 @@ namespace AdsbMudBlazor.Service
                 using IServiceScope scope = _serviceScopeFactory.CreateScope();
 
                 IFlightFetcher _flightFetcher = scope.ServiceProvider.GetRequiredService<IFlightFetcher>();
-
+                ICoordUtils coordUtils = scope.ServiceProvider.GetRequiredService<ICoordUtils>();
                 var currentFlights = await _flightFetcher.GetFlightsFromFeederAsync(token);
 
-                await using (var dbContext = await _contextFactory.CreateDbContextAsync(token))
-                {
-                    var notAlreadyExistingFlights = currentFlights.Where(flight => !dbContext.Flights.Any(cf => cf.Equals(flight)));
 
-                    _logger.LogInformation($"Not already exising: {notAlreadyExistingFlights.Count()}. Already existing: {dbContext.Flights.Count() - notAlreadyExistingFlights.Count()}");
+                await InsertOrUpdateFlights(currentFlights, token, coordUtils);
+                await InsertOrUpdatePlanes(currentFlights, token);
 
-                    await dbContext.Flights.AddRangeAsync(notAlreadyExistingFlights, cancellationToken: token);
-                    var flightsInserted = await dbContext.SaveChangesAsync(token);
-
-
-                    IEnumerable<string> planeList = currentFlights.Select(p => p.ModeS);
-
-                    int planesInserted = 0;
-                    int planesUpdated = 0;
-                    foreach (var plane in planeList)
-                    {
-                        var match = dbContext.Planes.Where(p => p.ModeS == plane);
-                        //TODO remove foreach, this should only ever return 0 or 1 result
-                        if (match.Any())
-                        {
-                            Debug.Assert(match.Count() > 0);
-                            foreach (Plane p in match)
-                            {
-                                planesUpdated++;
-                                p.LastSeen = DateTime.UtcNow;
-                            }
-                        }
-                        else
-                        {
-                            dbContext.Planes.Add(
-                                new Plane()
-                                {
-                                    ModeS = plane,
-                                    LastSeen = DateTime.UtcNow
-                                });
-                            planesInserted++;
-                        }
-                    }
-                    var changes = await dbContext.SaveChangesAsync(token);
-
-                    _logger.LogInformation($"--------------- flightsInserted: {flightsInserted}, planesInserted: {planesInserted}, planesUpdated: {planesUpdated}");
-                }
             }
             catch (Exception e)
             {
@@ -137,47 +99,54 @@ namespace AdsbMudBlazor.Service
 
         }
 
-        private async Task UpdateFlights(CancellationToken token)
+        private async Task InsertOrUpdateFlights(IEnumerable<Flight> flights, CancellationToken token, ICoordUtils coordUtils)
         {
-            IEnumerable<Flight> newFlights = new List<Flight>();
-            ICoordUtils _coordUtils;
-
-            using var scope = _serviceScopeFactory.CreateScope();
-            var _flightFetcher = scope.ServiceProvider.GetRequiredService<IFlightFetcher>();
-            _coordUtils = scope.ServiceProvider.GetRequiredService<ICoordUtils>();
-            newFlights = await _flightFetcher.GetFlightsFromFeederAsync(token);
-
-
             await using (var dbContext = await _contextFactory.CreateDbContextAsync(token))
             {
-                var flightsNotExisting = newFlights.Where(f => !dbContext.Flights.Contains(f));
 
-                _logger.LogInformation($"");
-                await dbContext.Flights.AddRangeAsync(flightsNotExisting);
-
-                var planesNotExisting = newFlights
-                    .Where(f => dbContext.Planes.All(p => p.ModeS != f.ModeS))
-                    .Select(fl => new Plane() { ModeS = fl.ModeS });
-
-
-                _logger.LogInformation($"-------------------------------------- newFlights: {newFlights.Count()} planesNotExisting: {planesNotExisting.Count()}, flightsNotExisting: {flightsNotExisting.Count()}");
-
-                await dbContext.Planes.AddRangeAsync(planesNotExisting);
-                await dbContext.SaveChangesAsync(token);
-
-
-                // loop through all flights in db whose modeS appears in list of flights currently being trackednewFlights
-                var updated = new List<Flight>();
-                foreach (var flight in dbContext.Flights.Where(f => newFlights.Select(j => j.ModeS).ToList().Contains(f.ModeS)))
+                IEnumerable<Flight> notAlreadyExistingFlights = flights
+                    .Where(flight => !dbContext.Flights.Any(cf => cf.Equals(flight)))
+                    .Select(f =>
                 {
-                    //TODO  check if lat long not null?
-                    flight.Distance = _coordUtils.GetDistance(_options.FeederLat, _options.FeederLong, flight.Lat, flight.Long);
-                    updated.Add(flight);
-                }
+                    if (f.Lat != 0 && f.Long != 0)
+                    {
+                        f.Distance = coordUtils.GetDistance(f.Lat, f.Long);
+                    }
+                    return f;
+                });
 
-                dbContext.UpdateRange(updated);
-                var c = await dbContext.SaveChangesAsync(token);
-                _logger.LogInformation($"Updated : {c}");
+
+                await dbContext.Flights.AddRangeAsync(notAlreadyExistingFlights, cancellationToken: token);
+                var flightsInserted = await dbContext.SaveChangesAsync(token);
+
+                _logger.LogInformation($"Not already existing: {notAlreadyExistingFlights.Count()}. Already existing: {dbContext.Flights.Count() - notAlreadyExistingFlights.Count()}, inserted: {flightsInserted}");
+
+            }
+        }
+
+        private async Task InsertOrUpdatePlanes(IEnumerable<Flight> flights, CancellationToken token)
+        {
+            await using (var dbContext = await _contextFactory.CreateDbContextAsync(token))
+            {
+                foreach (var flight in flights)
+                {
+                    var match = await dbContext.Planes.FirstOrDefaultAsync(p => p.ModeS == flight.ModeS, cancellationToken: token);
+
+                    if (match != null)
+                    {
+                        match.LastSeen = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        dbContext.Planes.Add(
+                            new Plane()
+                            {
+                                ModeS = flight.ModeS,
+                                LastSeen = DateTime.UtcNow
+                            });
+                    }
+                }
+                await dbContext.SaveChangesAsync(token);
             }
         }
     }

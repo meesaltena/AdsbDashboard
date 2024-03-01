@@ -69,6 +69,7 @@ namespace AdsbMudBlazorTests
             bool shoutNotequal2 = p3.Equals(p4);
 
 
+            Assert.True(p1 != null);
             Assert.True(shouldEqual);
             Assert.True(shouldEqual2);
             Assert.False(shoutNotequal);
