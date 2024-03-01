@@ -4,19 +4,28 @@ using System.Globalization;
 
 namespace AdsbMudBlazor.Service
 {
-    public class FeederService(IConfiguration configuration)
+    public class FeederService
     {
         //private readonly IConfiguration _configuration = configuration.;
-        public string? FeederUrl => configuration["FeederUrl"];
-        public string? FeederId => configuration["FeederId"];
-        public string? FeederName => configuration["FeederName"];
 
-        // TODO; when not set, use browser to get lan lon instead
+        public FeederService(IConfiguration configuration)
+        {
+            FeederUrl = configuration.GetValue<string>("FeederUrl") ?? throw new ArgumentNullException();
+            FeederId = configuration["FeederId"] ?? throw new ArgumentNullException(); 
+            FeederName = configuration["FeederName"] ?? throw new ArgumentNullException();
 
-        public double FeederLat => double.Parse(configuration["FeederLat"]!,CultureInfo.InvariantCulture);
+            FeederLat = double.Parse(configuration["FeederLat"] ?? throw new ArgumentNullException(), CultureInfo.InvariantCulture);
+            FeederLong = double.Parse(configuration["FeederLong"] ?? throw new ArgumentNullException(), CultureInfo.InvariantCulture);
+        }
 
-        public double FeederLong => double.Parse(configuration["FeederLong"]!,CultureInfo.InvariantCulture);
+        public string FeederUrl { get; set; }
+        public string FeederId { get; set; }
+        public string FeederName { get; set; }
 
-        public (double, double) FeederLocation => (FeederLat, FeederLong);
+
+
+        // TODO; when FeederLatLon not set, use browser to get lan lon instead
+        public double FeederLat { get; set; }
+        public double FeederLong { get; set; }
     }
 }
