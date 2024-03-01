@@ -1,0 +1,18 @@
+﻿version: '3.8'
+services:
+  adsbmudblazor:
+    restart: unless-stopped
+    image: adsbmudblazor:latest
+    volumes:
+      - adsbmudblazorvolume:/app
+      - /appsettings.json:/app/appsettings.json
+    ports:
+    - "5000:5000"
+    - "5001:5001"
+volumes:
+  adsbmudblazorvolume:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: /var/lib/docker/volumes/adsbmudblazorvolume/_data

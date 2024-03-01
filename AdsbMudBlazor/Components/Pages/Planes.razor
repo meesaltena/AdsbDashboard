@@ -1,0 +1,74 @@
+﻿@page "/planes"
+@using AdsbMudBlazor.Models
+@using System.Text.Json
+@using AdsbMudBlazor.Service
+@rendermode InteractiveServer
+@inject FlightsService flightsService
+<MyMudProviders />
+
+<PageTitle>Planes </PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Planes</MudText>
+<MudText>Total flight messages: @flightCount</MudText>
+<MudText>Total unique planes tracked: @uniquePlanes</MudText>
+<MudText>Ticks (ms) taken: @ticksTaken</MudText>
+
+@if (!doneLoadingCount)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+ 
+}
+@if (planes == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+ 
+    <MudTable Items="planes" Hover="true" SortLabel="Sort By" Elevation="0">
+        <HeaderContent>
+            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Plane, object>(x=>x.ModeS)">ICAO</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Plane, object>(x=>x.LastSeen)">Last Seen</MudTableSortLabel></MudTh>
+            @* <MudTh><MudTableSortLabel SortBy="new Func<Plane, object>(x=>x.Callsign)">Callsign</MudTableSortLabel></MudTh> *@
+
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="ICAO">@context.ModeS</MudTd>
+            <MudTd DataLabel="Last Seen">@context.LastSeen</MudTd>
+            @* <MudTd DataLabel="Callsign">@context.Callsign</MudTd> *@
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+        </PagerContent>
+    </MudTable>
+}
+
+@code {
+    private IEnumerable<Plane> planes;
+    private bool doneLoadingCount = false;
+    private int flightCount;
+    private int ticksTaken;
+    private int uniquePlanes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var t1 = Environment.TickCount;
+            flightCount = flightsService.GetNonEnumeratedFlightCount();
+            uniquePlanes = await flightsService.GetDistinctPlanes();
+            doneLoadingCount = true;
+            planes = await flightsService.GetPlanesAsync();
+            var t2 = Environment.TickCount;
+            ticksTaken = t2 - t1;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+}

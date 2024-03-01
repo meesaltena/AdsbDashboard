@@ -367,3 +367,4 @@ FodyWeavers.xsd
 *.db-shm
 *.db-wal
 /appsettings.json
+*.diagsession
