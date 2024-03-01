@@ -1,12 +1,15 @@
-﻿namespace AdsbMudBlazor.Utility
+﻿using AdsbMudBlazor.Models;
+using Microsoft.Extensions.Options;
+
+namespace AdsbMudBlazor.Utility
 {
     public class CoordUtils: ICoordUtils
     {
-        private readonly IConfiguration _configuration;
+        private readonly FeederOptions _options;
 
-        public CoordUtils(IConfiguration configuration)
+        public CoordUtils(IOptions<FeederOptions> options)
         {
-            _configuration = configuration;
+            _options = options.Value;
         }
 
         public double GetDistance(double lat1, double lon1, double lat2, double long2)

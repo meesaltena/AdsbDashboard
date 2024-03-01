@@ -1,4 +1,6 @@
 ﻿
+using AdsbMudBlazor.Models;
+using Microsoft.Extensions.Options;
 using System.Drawing;
 using System.Globalization;
 
@@ -6,26 +8,21 @@ namespace AdsbMudBlazor.Service
 {
     public class FeederService
     {
-        //private readonly IConfiguration _configuration = configuration.;
+        private readonly FeederOptions _options;
 
-        public FeederService(IConfiguration configuration)
+        public FeederService(IOptions<FeederOptions> options)
         {
-            FeederUrl = configuration.GetValue<string>("FeederUrl") ?? throw new ArgumentNullException();
-            FeederId = configuration["FeederId"] ?? throw new ArgumentNullException(); 
-            FeederName = configuration["FeederName"] ?? throw new ArgumentNullException();
-
-            FeederLat = double.Parse(configuration["FeederLat"] ?? throw new ArgumentNullException(), CultureInfo.InvariantCulture);
-            FeederLong = double.Parse(configuration["FeederLong"] ?? throw new ArgumentNullException(), CultureInfo.InvariantCulture);
+            _options = options.Value;
         }
 
-        public string FeederUrl { get; set; }
-        public string FeederId { get; set; }
-        public string FeederName { get; set; }
+        public string FeederUrl => _options.FeederUrl;
+        public string FeederId => _options.FeederUrl;
+        public string FeederName => _options.FeederUrl;
 
 
 
         // TODO; when FeederLatLon not set, use browser to get lan lon instead
-        public double FeederLat { get; set; }
-        public double FeederLong { get; set; }
+        public double FeederLat => _options.FeederLat;
+        public double FeederLong => _options.FeederLong;
     }
 }

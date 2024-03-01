@@ -1,5 +1,6 @@
 using AdsbMudBlazor.Components;
 using AdsbMudBlazor.Data;
+using AdsbMudBlazor.Models;
 using AdsbMudBlazor.Service;
 using AdsbMudBlazor.Utility;
 using MudBlazor.Services;
@@ -12,16 +13,14 @@ namespace AdsbMudBlazor
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            //builder.WebHost.ConfigureKestrel((context, serverOptions) =>
-            //{
-            //    serverOptions.Listen(IPAddress.Any, 5000);
-            //    //serverOptions.Listen(IPAddress.Any, 5001);
-            //});
 
             builder.Logging.AddConsole();
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
+
+            builder.Services.Configure<FeederOptions>(builder.Configuration.GetSection(FeederOptions.Position));
+            builder.Services.Configure<DbOptions>(builder.Configuration.GetSection(DbOptions.Position));
             builder.Services
                 .AddDbContextFactory<FlightDbContext>()
                 .AddScoped<IFlightFetcher, FlightFetcher>()

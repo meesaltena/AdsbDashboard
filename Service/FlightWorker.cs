@@ -3,6 +3,7 @@ using System.Text.Json;
 using AdsbMudBlazor.Data;
 using AdsbMudBlazor.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AdsbMudBlazor.Service
 {
@@ -12,19 +13,19 @@ namespace AdsbMudBlazor.Service
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IDbContextFactory<FlightDbContext> _contextFactory;
         private readonly ILogger _logger;
-        private readonly IConfiguration _configuration;
+        private readonly FeederOptions _options;
 
         public FlightWorker(IDbContextFactory<FlightDbContext> contextFactory,
             IHttpClientFactory httpClientFactory, 
             IServiceScopeFactory serviceScopeFactory, 
             ILogger<FlightWorker> logger, 
-            IConfiguration configuration)
+            IOptions<FeederOptions> options)
         {
             _contextFactory = contextFactory;
             _httpClientFactory = httpClientFactory;
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
-            _configuration = configuration;
+            _options = options.Value;
         }
 
         private async Task CreateDb()
@@ -36,7 +37,7 @@ namespace AdsbMudBlazor.Service
             }
             catch (Exception e)
             {
-                _logger.LogError("config: {0}", _configuration);
+                _logger.LogError("config: {0}", _options);
                 _logger.LogError(e.Message);
                 throw;
             }
@@ -66,7 +67,6 @@ namespace AdsbMudBlazor.Service
 
                     await using (var dbContext = await _contextFactory.CreateDbContextAsync(stoppingToken))
                     {
-
 
                         var currFlights = dbContext.Flights.ToList();
                         var currPlanes = dbContext.Planes.ToList();

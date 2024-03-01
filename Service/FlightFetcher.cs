@@ -3,47 +3,21 @@ using System.Net.Http;
 using System.Text.Json;
 using AdsbMudBlazor.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace AdsbMudBlazor.Service
 {
-    public class FlightFetcher(IHttpClientFactory httpClientFactory, ILogger<FlightFetcher> logger, IConfiguration configuration) : IFlightFetcher
+    public class FlightFetcher : IFlightFetcher
     {
-        public IEnumerable<Flight> GetFlightsFromFeeder()
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger<FlightFetcher> _logger;
+        private readonly FeederOptions _options;
+
+        public FlightFetcher(IHttpClientFactory httpClientFactory, ILogger<FlightFetcher> logger, IOptions<FeederOptions> options)
         {
-            List<Flight> flights = new List<Flight>();
-            try
-            {
-                var client = httpClientFactory.CreateClient();
-                var response = client.GetStringAsync(configuration["FeederUrl"]).Result;
-
-                var document = JsonDocument.Parse(response);
-                var root = document.RootElement;
-
-                //TODO use proper parsing
-                foreach (var property in root.EnumerateObject())
-                {
-                    var flightData = property.Value;
-                    var flight = new Flight
-                    {
-                        ModeS = flightData[0].GetString()!,
-                        Callsign = flightData[16].GetString()!,
-                        Lat = flightData[1].GetDouble().ToString(CultureInfo.InvariantCulture)!,
-                        Long = flightData[2].GetDouble().ToString(CultureInfo.InvariantCulture)!,
-                        Alt = flightData[4].GetInt32().ToString(),
-                        Squawk = flightData[6].GetString()!
-                    };
-                    flights.Add(flight);
-
-                    //_logger.LogInformation($"ModeS: {flight.ModeS}, Callsign: {flight.Callsign}, Lat: {flight.Lat}, Long: {flight.Long}, Alt: {flight.Alt}, SQW: {flight.Squawk}");
-                }
-            }
-            catch (Exception e)
-            {
-                logger.LogError(e.GetBaseException().Message);
-                throw;
-            }
-
-            return flights;
+            _httpClientFactory = httpClientFactory;
+            _logger = logger;
+            _options = options.Value;
         }
 
         public async Task<IEnumerable<Flight>> GetFlightsFromFeederAsync()
@@ -51,8 +25,8 @@ namespace AdsbMudBlazor.Service
             List<Flight> flights = new List<Flight>();
             try
             {
-                var client = httpClientFactory.CreateClient();
-                var response = await client.GetStreamAsync(configuration["FeederUrl"]);
+                using HttpClient client = _httpClientFactory.CreateClient();
+                var response = await client.GetStreamAsync(_options.FeederUrl);
 
                 var document = await JsonDocument.ParseAsync(response);
                 var root = document.RootElement;
@@ -77,8 +51,7 @@ namespace AdsbMudBlazor.Service
             }
             catch (Exception e)
             {
-                logger.LogError(e.GetBaseException().Message);
-                throw;
+                _logger.LogError(e.ToString());
             }
 
             return flights;
