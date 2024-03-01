@@ -1,6 +1,7 @@
 ﻿version: '3.8'
 services:
   adsbmudblazor:
+    restart: unless-stopped
     image: adsbmudblazor:latest
     volumes:
       - adsbmudblazorvolume:/app
