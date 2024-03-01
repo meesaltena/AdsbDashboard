@@ -107,13 +107,18 @@ namespace AdsbMudBlazor.Service
                 foreach (var flight in flights)
                 {
                     IQueryable<Flight> match = dbContext.Flights.Where(fl => fl.Equals(flight));
+                    
+                    Debug.Assert(match.Count() == 1);
 
-                    Debug.Assert(match.Count() > 1);
+                    var f = match.FirstOrDefault();
 
-                    await match.ExecuteUpdateAsync(setters => setters
-                        .SetProperty(f => f.Distance, f => (f.Lat != 0 && f.Long != 0) 
-                            ? coordUtils.GetDistance(f.Lat, f.Long) : 0));
+                    f.Distance = coordUtils.GetDistanceOrZero(f.Lat, f.Long);
+
+                    //await match.ExecuteUpdateAsync(setters => setters
+                    //    .SetProperty(f => f.Distance, f => coordUtils.GetDistanceOrZero(f.Lat, f.Long)));
                 }
+
+                await dbContext.SaveChangesAsync();
             }
         }
         private async Task InsertOrUpdateFlights(IEnumerable<Flight> flights, CancellationToken token)

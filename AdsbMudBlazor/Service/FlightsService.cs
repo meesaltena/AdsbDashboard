@@ -50,12 +50,15 @@ namespace AdsbMudBlazor.Service
             }
         }
 
-        public List<Flight> GetMostRecentFlights(int number)
+        public Task<List<Flight>> GetRecentFlightsAsync(TimeSpan timeSpan)
         {
             try
             {
                 using var context =  contextFactory.CreateDbContext();
-                return context.Flights.Take(number).ToList();
+
+                DateTime oldest = DateTime.UtcNow.Subtract(timeSpan);
+
+                return context.Flights.Where(f => f.DateTime > oldest).ToListAsync();
             }
             catch (Exception e)
             {

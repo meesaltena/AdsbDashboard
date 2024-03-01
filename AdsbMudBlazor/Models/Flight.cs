@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AdsbMudBlazor.Models
 {
@@ -18,6 +19,9 @@ namespace AdsbMudBlazor.Models
         public double Long { get; set; }
 
         public double? Distance { get; set; }
+
+        //[NotMapped]
+        public double? DistanceKm => Distance / 1000;
         public DateTime DateTime { get; set; }
 
 
