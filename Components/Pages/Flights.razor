@@ -32,7 +32,8 @@ else
             <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=>x.Squawk)">Squawk</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=>x.Lat)">Lat</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=>x.Long)">Long</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Descending" T="double">Distance</MudTableSortLabel></MudTh>
+            @* <MudTh><MudTableSortLabel InitialDirection="SortDirection.Descending" T="double">Distance</MudTableSortLabel></MudTh> *@
+            <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=>x.Distance)">Distance</MudTableSortLabel></MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="ICAO">
@@ -45,7 +46,8 @@ else
             <MudTd DataLabel="Squawk">@context.Squawk</MudTd>
             <MudTd DataLabel="Lat">@context.Lat</MudTd>
             <MudTd DataLabel="Long">@context.Long</MudTd>
-            <MudTd DataLabel="Long">@GetDistanceToFlight(@context)</MudTd>
+            @* <MudTd DataLabel="Long">@GetDistanceToFlight(@context)</MudTd> *@
+            <MudTd DataLabel="Long">@context.Distance</MudTd>
         </RowTemplate>
         <PagerContent>
             <MudTablePager PageSizeOptions="new int[]{50, 100}" />
@@ -62,19 +64,17 @@ else
         flights = await flightFetcher.GetFlightsFromFeederAsync();
     }
 
-    private double GetDistanceToFlight(Flight flight)
-    {
-        if (Double.TryParse(flight.Lat, out double fLat) &&
-            Double.TryParse(flight.Long, out double fLong) &&
-            fLat != 0 && 
-            fLong != 0)
-        {
-            return coordUtils.GetDistance(
-                feederService.FeederLat,
-                feederService.FeederLong,
-                fLat,
-                fLong);
-        }
-        return Double.NaN;
-    }
+    // private double GetDistanceToFlight(Flight flight)
+    // {
+    //     if (flight.Lat != 0 && 
+    //         flight.Long != 0)
+    //     {
+    //         return coordUtils.GetDistance(
+    //             feederService.FeederLat,
+    //             feederService.FeederLong,
+    //             flight.Lat,
+    //             flight.Long);
+    //     }
+    //     return Double.NaN;
+    // }
 }

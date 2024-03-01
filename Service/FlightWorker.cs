@@ -1,9 +1,13 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using AdsbMudBlazor.Data;
 using AdsbMudBlazor.Models;
+using AdsbMudBlazor.Utility;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace AdsbMudBlazor.Service
 {
@@ -15,8 +19,8 @@ namespace AdsbMudBlazor.Service
         private readonly FeederOptions _options;
 
         public FlightWorker(IDbContextFactory<FlightDbContext> contextFactory,
-            IServiceScopeFactory serviceScopeFactory, 
-            ILogger<FlightWorker> logger, 
+            IServiceScopeFactory serviceScopeFactory,
+            ILogger<FlightWorker> logger,
             IOptions<FeederOptions> options)
         {
             _contextFactory = contextFactory;
@@ -29,8 +33,10 @@ namespace AdsbMudBlazor.Service
         {
             try
             {
+                _logger.LogInformation("Ensuring database created");
                 var dbContext = await _contextFactory.CreateDbContextAsync();
                 return await dbContext.Database.EnsureCreatedAsync();
+
             }
             catch (Exception e)
             {
@@ -42,55 +48,74 @@ namespace AdsbMudBlazor.Service
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            if (!await CreateDb()) return;
-
-            while (!stoppingToken.IsCancellationRequested)
+            await CreateDb();
+            try
             {
-                IEnumerable<Flight> newFlights = new List<Flight>();
-
-                try
+                while (!stoppingToken.IsCancellationRequested)
                 {
+                    var startTime = DateTime.Now;
+                    var endTime = startTime.AddMilliseconds((1000 * _options.WorkerInterval));
+
+                    Stopwatch stopwatch = Stopwatch.StartNew();
+                    IEnumerable<Flight> newFlights = new List<Flight>();
+                    ICoordUtils _coordUtils;
+
                     using var scope = _serviceScopeFactory.CreateScope();
                     var _flightFetcher = scope.ServiceProvider.GetRequiredService<IFlightFetcher>();
-                    newFlights = await _flightFetcher.GetFlightsFromFeederAsync();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"An error occurred: {ex.Message}");
-                }
+                    _coordUtils = scope.ServiceProvider.GetRequiredService<ICoordUtils>();
+                    newFlights = await _flightFetcher.GetFlightsFromFeederAsync(stoppingToken);
 
-                try
-                {
+
+
                     await using (var dbContext = await _contextFactory.CreateDbContextAsync(stoppingToken))
                     {
+                        var flightsNotExisting = newFlights.Where(f => !dbContext.Flights.Contains(f));
 
-                        var currFlights = dbContext.Flights.ToList();
-                        var currPlanes = dbContext.Planes.ToList();
-
-                        var flightsNotExisting = newFlights
-                            .Where(f => !currFlights.Contains(f))
-                            .ToList();
-
-                        dbContext.Flights.AddRange(flightsNotExisting);
+                        _logger.LogInformation($"");
+                        await dbContext.Flights.AddRangeAsync(flightsNotExisting);
 
                         var planesNotExisting = newFlights
-                            .Where(f => currPlanes.All(p => p.ModeS != f.ModeS))
-                            .Select(fl => new Plane() { ModeS = fl.ModeS }).ToList();
+                            .Where(f => dbContext.Planes.All(p => p.ModeS != f.ModeS))
+                            .Select(fl => new Plane() { ModeS = fl.ModeS });
 
 
-                        dbContext.Planes.AddRange(planesNotExisting);
+                        _logger.LogInformation($"-------------------------------------- newFlights: {newFlights.Count()} planesNotExisting: {planesNotExisting.Count()}, flightsNotExisting: {flightsNotExisting.Count()}");
 
-                        await dbContext.SaveChangesAsync(stoppingToken);                 
+                        await dbContext.Planes.AddRangeAsync(planesNotExisting);
+                        await dbContext.SaveChangesAsync(stoppingToken);
+
+
+                        // loop through all flights in db whose modeS appears in list of flights currently being trackednewFlights
+                        var updated = new List<Flight>();
+                        foreach (var flight in dbContext.Flights.Where(f => newFlights.Select(j => j.ModeS).ToList().Contains(f.ModeS)))
+                        {
+                            //TODO  check if lat long not null?
+                            flight.Distance = _coordUtils.GetDistance(_options.FeederLat, _options.FeederLong, flight.Lat, flight.Long);
+                            updated.Add(flight);
+                        }
+
+                        dbContext.UpdateRange(updated);
+                        var c = await dbContext.SaveChangesAsync();
+                        _logger.LogInformation($"Updated : {c}");
                     }
 
-                    await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+
+
+                    var timeToDelayLeft = endTime.Subtract(startTime);
+
+                    timeToDelayLeft = (timeToDelayLeft < TimeSpan.FromSeconds(5)) ? TimeSpan.FromSeconds(5) : timeToDelayLeft;
+
+                    _logger.LogInformation($"FlightWorker took {stopwatch.Elapsed}. delaying: {timeToDelayLeft}");
+                    await Task.Delay(timeToDelayLeft, stoppingToken);
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"An error occurred: {ex.Message}");
-                }
-                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
             }
+            catch (Exception ex)
+            {
+                _logger.LogError($"FlightWorker: An error occurred: {ex.Message}");
+                throw;
+            }
+
+            _logger.LogInformation($"FlightWorker stopping!");
         }
 
 

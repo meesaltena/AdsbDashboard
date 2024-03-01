@@ -4,7 +4,7 @@ namespace AdsbMudBlazor.Service
 {
     public interface IFlightFetcher
     {
-        public Task<IEnumerable<Flight>> GetFlightsFromFeederAsync();
-        public Task<int> GetCurrentlyTrackedFlightsCount();
+        public Task<IEnumerable<Flight>> GetFlightsFromFeederAsync(CancellationToken token = default);
+        public Task<int> GetCurrentlyTrackedFlightsCount(CancellationToken token = default);
     }
 }

@@ -28,6 +28,7 @@ namespace AdsbMudBlazor.Data
                 _logger.LogWarning("No DatabasePath path provided! using fallback {0}", dbPath);
             }
             optionsBuilder.UseSqlite($"Data Source={dbPath}");
+            
         }
     }
 }
