@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AdsbMudBlazor.Migrations
 {
     [DbContext(typeof(FlightDbContext))]
-    [Migration("20240301144250_InitialCreate")]
+    [Migration("20240301155147_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -34,16 +34,17 @@ namespace AdsbMudBlazor.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("DateTime")
+                        .HasColumnType("TEXT");
+
                     b.Property<double?>("Distance")
                         .HasColumnType("REAL");
 
-                    b.Property<string>("Lat")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<double>("Lat")
+                        .HasColumnType("REAL");
 
-                    b.Property<string>("Long")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<double>("Long")
+                        .HasColumnType("REAL");
 
                     b.Property<string>("ModeS")
                         .IsRequired()
@@ -55,12 +56,18 @@ namespace AdsbMudBlazor.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ModeS", "Callsign", "Alt", "Squawk", "Lat", "Long", "DateTime")
+                        .IsUnique();
+
                     b.ToTable("Flights");
                 });
 
             modelBuilder.Entity("AdsbMudBlazor.Models.Plane", b =>
                 {
                     b.Property<string>("ModeS")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastSeen")
                         .HasColumnType("TEXT");
 
                     b.HasKey("ModeS");

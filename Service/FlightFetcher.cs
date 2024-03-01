@@ -58,7 +58,8 @@ namespace AdsbMudBlazor.Service
                         Lat = flightData[1].GetDouble(),
                         Long = flightData[2].GetDouble(),
                         Alt = flightData[4].GetInt32().ToString(),
-                        Squawk = flightData[6].GetString()!
+                        Squawk = flightData[6].GetString()!,
+                        DateTime = DateTime.UtcNow,
                     };
                     flights.Add(flight);
                 }

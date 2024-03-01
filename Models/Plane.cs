@@ -7,5 +7,7 @@ namespace AdsbMudBlazor.Models
         // ICAO code registration
         [Key]
         public string ModeS { get; set; }
+
+        public DateTime? LastSeen { get; set; }
     }
 }

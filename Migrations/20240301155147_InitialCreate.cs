@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -20,9 +21,10 @@ namespace AdsbMudBlazor.Migrations
                     Callsign = table.Column<string>(type: "TEXT", nullable: false),
                     Alt = table.Column<string>(type: "TEXT", nullable: false),
                     Squawk = table.Column<string>(type: "TEXT", nullable: false),
-                    Lat = table.Column<string>(type: "TEXT", nullable: false),
-                    Long = table.Column<string>(type: "TEXT", nullable: false),
-                    Distance = table.Column<double>(type: "REAL", nullable: true)
+                    Lat = table.Column<double>(type: "REAL", nullable: false),
+                    Long = table.Column<double>(type: "REAL", nullable: false),
+                    Distance = table.Column<double>(type: "REAL", nullable: true),
+                    DateTime = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -33,12 +35,19 @@ namespace AdsbMudBlazor.Migrations
                 name: "Planes",
                 columns: table => new
                 {
-                    ModeS = table.Column<string>(type: "TEXT", nullable: false)
+                    ModeS = table.Column<string>(type: "TEXT", nullable: false),
+                    LastSeen = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Planes", x => x.ModeS);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Flights_ModeS_Callsign_Alt_Squawk_Lat_Long_DateTime",
+                table: "Flights",
+                columns: new[] { "ModeS", "Callsign", "Alt", "Squawk", "Lat", "Long", "DateTime" },
+                unique: true);
         }
 
         /// <inheritdoc />
