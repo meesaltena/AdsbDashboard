@@ -49,7 +49,22 @@ namespace AdsbMudBlazor.Service
                 throw;
             }
         }
+        public List<Flight> GetRecentFlights(TimeSpan timeSpan)
+        {
+            try
+            {
+                using var context = contextFactory.CreateDbContext();
 
+                DateTime oldest = DateTime.UtcNow.Subtract(timeSpan);
+
+                return context.Flights.Where(f => f.DateTime > oldest).ToList();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+                throw;
+            }
+        }
         public Task<List<Flight>> GetRecentFlightsAsync(TimeSpan timeSpan)
         {
             try

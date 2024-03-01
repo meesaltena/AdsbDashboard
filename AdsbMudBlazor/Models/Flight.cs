@@ -21,7 +21,7 @@ namespace AdsbMudBlazor.Models
         public double? Distance { get; set; }
 
         //[NotMapped]
-        public double? DistanceKm => Distance / 1000;
+        public double DistanceKm => Distance / 1000 ?? Double.MaxValue;
         public DateTime DateTime { get; set; }
 
 
