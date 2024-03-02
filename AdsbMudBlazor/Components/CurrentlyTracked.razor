@@ -4,7 +4,7 @@
 
 <MudText Class="mb-8">
     Total flights currently being tracked by
-    <MudLink Href="@($"https://www.flightradar24.com/account/feed-stats/?id={feederService.FeederId}")">@feederService.FeederName</MudLink>:
+    <MudLink Href="@(feederService.FeederUrl)">@feederService.FeederName</MudLink>:
     @if (flightCount != null) { 
         @flightCount
     }
