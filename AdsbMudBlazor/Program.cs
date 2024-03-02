@@ -18,8 +18,18 @@ namespace AdsbMudBlazor
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
+            builder.Configuration.AddJsonFile($"appsettings.json");
+            builder.Configuration.AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", true);
 
-            builder.Services.Configure<FeederOptions>(builder.Configuration.GetSection(FeederOptions.Position));
+            var feederBaseurl = "";
+
+            if (!string.IsNullOrEmpty(builder.Configuration["FeederOptions:FeederUrl"]))
+                feederBaseurl = builder.Configuration["FeederOptions:FeederUrl"];
+            else if (!string.IsNullOrEmpty(builder.Configuration["FeederUrl"]))
+                feederBaseurl = builder.Configuration["FeederOptions:FeederUrl"];
+            Uri feederBaseUri = new Uri(feederBaseurl ?? throw new ArgumentNullException("AddHttpClient Error: FeederOptions:FeederUrl or FeederUrl not set"));
+    
+                builder.Services.Configure<FeederOptions>(builder.Configuration.GetSection(FeederOptions.Position));
             builder.Services.Configure<DbOptions>(builder.Configuration.GetSection(DbOptions.Position));
             builder.Services
                 .AddDbContextFactory<FlightDbContext>()
@@ -30,7 +40,7 @@ namespace AdsbMudBlazor
                 .AddScoped<FeederService>()
                 .AddHttpClient<IFlightFetcher, FlightFetcher>(client =>
                 {
-                    client.BaseAddress = new Uri(builder.Configuration["FeederOptions:FeederUrl"] ?? throw new ArgumentNullException());
+                    client.BaseAddress = feederBaseUri;
                 });
 
             AppDomain currDomain = AppDomain.CurrentDomain;
@@ -58,7 +68,6 @@ namespace AdsbMudBlazor
 
             app.Run();
         }
-
         static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs args)
         {
             Exception e = (Exception)args.ExceptionObject;

@@ -19,6 +19,7 @@ namespace AdsbMudBlazor.Service
             _httpClient = httpClient;
             _logger = logger;
             _options = options.Value;
+            _logger.LogInformation(_options.FeederUrl, "FlightFetcher");
         }
 
         public async Task<int> GetCurrentlyTrackedFlightsCount(CancellationToken token)
@@ -33,8 +34,9 @@ namespace AdsbMudBlazor.Service
                 if (root.EnumerateObject().TryGetNonEnumeratedCount(out int count)) return count;
                 return root.EnumerateObject().Count();
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                _logger.LogError(e, "GetCurrentlyTrackedFlightsCount Exception: ");
                 throw;
             }
         }
@@ -63,12 +65,12 @@ namespace AdsbMudBlazor.Service
                     };
                     flights.Add(flight);
                 }
+
             }
             catch (Exception e)
             {
-                _logger.LogError(e.ToString());
+                _logger.LogError(e, "GetFlightsFromFeederAsync Exception: ");
             }
-
             return flights;
         }
     }

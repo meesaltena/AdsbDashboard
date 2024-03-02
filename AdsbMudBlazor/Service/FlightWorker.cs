@@ -40,8 +40,8 @@ namespace AdsbMudBlazor.Service
             }
             catch (Exception e)
             {
-                _logger.LogError("config: {0}", _options);
-                _logger.LogError(e.Message);
+                _logger.LogError(_options.ToString(), "config: {0}");
+                _logger.LogError(e, "CreateDb Exception: ");
                 throw;
             }
         }
@@ -68,7 +68,7 @@ namespace AdsbMudBlazor.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError($"FlightWorker: An error occurred: {ex.Message}");
+                _logger.LogError(ex, "FlightWorker UpdateFlightsSimple: An error occurred:");
                 throw;
             }
 
@@ -84,6 +84,7 @@ namespace AdsbMudBlazor.Service
 
                 IFlightFetcher _flightFetcher = scope.ServiceProvider.GetRequiredService<IFlightFetcher>();
                 ICoordUtils coordUtils = scope.ServiceProvider.GetRequiredService<ICoordUtils>();
+
                 var currentFlights = await _flightFetcher.GetFlightsFromFeederAsync(token);
 
 
@@ -94,7 +95,7 @@ namespace AdsbMudBlazor.Service
             }
             catch (Exception e)
             {
-                _logger.LogError($"FlightWorker UpdateFlightsSimple: An error occurred: {e.Message}");
+                _logger.LogError(e, "FlightWorker UpdateFlightsSimple: An error occurred:");
                 throw;
             }
 
@@ -130,7 +131,6 @@ namespace AdsbMudBlazor.Service
                 await dbContext.Flights.AddRangeAsync(notAlreadyExistingFlights, cancellationToken: token);
                 var flightsInserted = await dbContext.SaveChangesAsync(token);
                 _logger.LogInformation($"Not already existing: {notAlreadyExistingFlights.Count()}. Already existing: {dbContext.Flights.Count() - notAlreadyExistingFlights.Count()}, inserted: {flightsInserted}");
-
             }
         }
 
