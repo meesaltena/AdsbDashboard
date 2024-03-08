@@ -1,8 +1,12 @@
 using AdsbMudBlazor.Components;
+using AdsbMudBlazor.Components.Account;
 using AdsbMudBlazor.Data;
 using AdsbMudBlazor.Models;
 using AdsbMudBlazor.Service;
 using AdsbMudBlazor.Utility;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using System.Net;
 
@@ -18,6 +22,35 @@ namespace AdsbMudBlazor
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
+
+            // --- setup auth 
+
+            builder.Services.AddCascadingAuthenticationState();
+            builder.Services.AddScoped<IdentityUserAccessor>();
+            builder.Services.AddScoped<IdentityRedirectManager>();
+            builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+
+            builder.Services.AddAuthentication(options =>
+                {
+                    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+                    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+                })
+                .AddIdentityCookies();
+
+            var authConnectionString = builder.Configuration.GetConnectionString("AuthDbConnection") ?? throw new InvalidOperationException("Connection string 'AuthDbConnection' not found.");
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlite(authConnectionString));
+            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+            builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddSignInManager()
+                .AddDefaultTokenProviders();
+
+            builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+
+            // --- setup flight db
+
             builder.Configuration.AddJsonFile($"appsettings.json");
             builder.Configuration.AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", true);
 
@@ -28,11 +61,16 @@ namespace AdsbMudBlazor
             else if (!string.IsNullOrEmpty(builder.Configuration["FeederUrl"]))
                 feederBaseurl = builder.Configuration["FeederOptions:FeederUrl"];
             Uri feederBaseUri = new Uri(feederBaseurl ?? throw new ArgumentNullException("AddHttpClient Error: FeederOptions:FeederUrl or FeederUrl not set"));
-    
-                builder.Services.Configure<FeederOptions>(builder.Configuration.GetSection(FeederOptions.Position));
+
+
+            var flightDbConnectionString = builder.Configuration.GetConnectionString("FlightDbConnection") ?? throw new InvalidOperationException("Connection string 'flightDbConnectionString' not found.");
+
+
+            builder.Services.Configure<FeederOptions>(builder.Configuration.GetSection(FeederOptions.Position));
             builder.Services.Configure<DbOptions>(builder.Configuration.GetSection(DbOptions.Position));
             builder.Services
-                .AddDbContextFactory<FlightDbContext>()
+                .AddDbContextFactory<FlightDbContext>(options =>
+                options.UseSqlite(flightDbConnectionString))
                 .AddScoped<IFlightFetcher, FlightFetcher>()
                 .AddHostedService<FlightWorker>()
                 .AddScoped<ICoordUtils, CoordUtils>()
@@ -65,6 +103,9 @@ namespace AdsbMudBlazor
 
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
+
+            // Add additional endpoints required by the Identity /Account Razor components.
+            app.MapAdditionalIdentityEndpoints();
 
             app.Run();
         }

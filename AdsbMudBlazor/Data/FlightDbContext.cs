@@ -21,13 +21,13 @@ namespace AdsbMudBlazor.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            string dbPath = _dbOptions.DatabasePath;
-            if (string.IsNullOrEmpty(dbPath))
-            {
-                dbPath = "flights.db";
-                _logger.LogWarning("No DatabasePath path provided! using fallback {0}", dbPath);
-            }
-            optionsBuilder.UseSqlite($"Data Source={dbPath}");
+            //string dbPath = _dbOptions.DatabasePath;
+            //if (string.IsNullOrEmpty(dbPath))
+            //{
+            //    dbPath = "flights.db";
+            //    _logger.LogWarning("No DatabasePath path provided! using fallback {0}", dbPath);
+            //}
+            //optionsBuilder.UseSqlite($"Data Source={dbPath}");
             
         }
     }
