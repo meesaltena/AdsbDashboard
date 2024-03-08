@@ -4,5 +4,33 @@
     <MudNavLink Href="flights" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Radar">Current flights</MudNavLink>
     <MudNavLink Href="recentflights" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Radar">Recent flights</MudNavLink>
     <MudNavLink Href="planes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Flight">Planes</MudNavLink>
+    <MudNavLink Href="auth" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Lock">Auth required</MudNavLink>
 
+    <AuthorizeView>
+        <Authorized>
+            <MudNavLink Href="Account/Manage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ManageAccounts">Manage account</MudNavLink>
+            <AntiforgeryToken />
+            <MudNavLink Href="Account/Logout" UserAttributes="@hrefAttributes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Logout">Logout</MudNavLink>
+@*             <div class="nav-item px-3">
+                <form action="Account/Logout" method="post">
+                    
+                    <button type="submit" class="nav-link">
+                        <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+                    </button>
+                </form>
+            </div> *@
+        </Authorized>
+        <NotAuthorized>
+            <MudNavLink Href="Account/Register" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AppRegistration">Register account</MudNavLink>
+            <MudNavLink Href="Account/Login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Login">Login</MudNavLink>
+        </NotAuthorized>
+    </AuthorizeView>
 </MudNavMenu>
+
+@code{
+        public Dictionary<string, object> hrefAttributes { get; set; } = 
+        new Dictionary<string, object>() 
+        {
+            { "method", "POST" },
+        };
+}

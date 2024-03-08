@@ -38,12 +38,12 @@ namespace AdsbMudBlazor
                 .AddIdentityCookies();
 
             var authConnectionString = builder.Configuration.GetConnectionString("AuthDbConnection") ?? throw new InvalidOperationException("Connection string 'AuthDbConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            builder.Services.AddDbContext<AuthDbContext>(options =>
                 options.UseSqlite(authConnectionString));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddEntityFrameworkStores<AuthDbContext>()
                 .AddSignInManager()
                 .AddDefaultTokenProviders();
 
