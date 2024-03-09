@@ -4,6 +4,9 @@
 @using AdsbMudBlazor.Service
 @rendermode InteractiveServer
 @inject FlightsService flightsService
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
 <MyMudProviders />
 
 <PageTitle>Planes </PageTitle>
