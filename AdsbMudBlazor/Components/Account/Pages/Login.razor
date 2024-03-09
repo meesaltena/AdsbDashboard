@@ -12,57 +12,60 @@
 
 <PageTitle>Log in</PageTitle>
 
-<h1>Log in</h1>
+<MudText Typo="Typo.h6">Log in</MudText>
 <MudGrid>
     <MudItem xs="12" sm="7">
-        <MudPaper Class="pa-4">
+        <MudPaper Elevation="4" Class="pa-4">
             <StatusMessage Message="@errorMessage" />
             <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
                 <DataAnnotationsValidator />
-                <h2>Use a local account to log in.</h2>
-                <hr />
+                <MudText>Use a local account to log in.</MudText>
+                <br />
+                <br />
                 <ValidationSummary class="text-danger" role="alert" />
                 <div class="form-floating mb-3">
+                    <MudInputLabel for="email" class="form-label">Email</MudInputLabel>
                     <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label for="email" class="form-label">Email</label>
                     <ValidationMessage For="() => Input.Email" class="text-danger" />
                 </div>
                 <div class="form-floating mb-3">
-                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label for="password" class="form-label">Password</label>
-                    <ValidationMessage For="() => Input.Password" class="text-danger" />
+                    <MudInputLabel for="password"  class="form-label">Password</MudInputLabel>
+                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="●●●●●●●●●●" />
+                     <ValidationMessage For="() => Input.Password" class="text-danger" />
                 </div>
+                <br />
                 <div class="checkbox mb-3">
-                    <label class="form-label">
+                    <MudInputLabel class="form-label">
                         <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
                         Remember me
-                    </label>
+                    </MudInputLabel>
                 </div>
                 <div class="d-flex align-center justify-space-between">
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="ml-auto">Log in</MudButton>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="ml-auto ">Log in</MudButton>
                 </div>
                 <div>
                     <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
+                        <MudLink href="Account/ForgotPassword">Forgot your password?</MudLink>
                     </p>
                     <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
+                        <MudLink href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">
+                            Register as a new user
+                            </MudLink>
                     </p>
                     <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
+                        <MudLink href="Account/ResendEmailConfirmation">Resend email confirmation</MudLink>
                     </p>
                 </div>
             </EditForm>
         </MudPaper>
     </MudItem>
-    <MudItem xs="12" sm="5">
+@*     <MudItem xs="12" sm="5">
         <MudPaper Class="pa-4 mud-height-full">
             <h3>Use another service to log in.</h3>
             <hr />
             <ExternalLoginPicker />
         </MudPaper>
-    </MudItem>
+    </MudItem> *@
 </MudGrid>
 
 @code {
