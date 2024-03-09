@@ -1,0 +1,67 @@
+﻿@page "/charts"
+@using AdsbMudBlazor.Models
+@using System.Text.Json
+@using AdsbMudBlazor.Service
+@using AdsbMudBlazor.Utility
+@using Color = MudBlazor.Color
+@rendermode InteractiveServer
+@inject FlightsService flightsService
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
+<MyMudProviders />
+<PageTitle>Charts</PageTitle>
+<CurrentlyTracked />
+
+@if (loading)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <div>
+        @* <MudPaper Class="d-flex justify-center flex-grow-1 gap-4" Outlined="true" Elevation="0"> *@
+            <MudChart ChartType="ChartType.Line" ChartSeries="@_series" XAxisLabels="@GetXAxisLabels()" Width="60%" Height="40%" ChartOptions="@_options"></MudChart>
+        @* </MudPaper> *@
+    </div>
+}
+
+@code {
+    private readonly List<ChartSeries> _series = new();
+    DateTime SelectedDate = DateTime.UtcNow;
+    bool loading = true;
+    private readonly ChartOptions _options = new()
+        {
+            XAxisLines = true
+    };
+
+    private string[] GetXAxisLabels()
+    {
+        return Enumerable.Range(0, 24).Select(i => DateTime.UtcNow.AddHours(-i).ToString("HH")).ToArray();
+    }
+
+    private TimeSpan? selectedTimeSpan { get; set; } = TimeSpan.FromDays(1);
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        // var counts = Enumerable.Range(0, 24).Select(i => flights.Count(f => f.DateTime > DateTime.UtcNow.AddHours(-i) && f.DateTime < DateTime.UtcNow.AddHours((-i+1))));
+
+        var flights = await GetFlightsAsync();
+        double[] counts = Enumerable.Range(0, 24)
+                                    .Select(i => Convert.ToDouble(flights
+                                        .Count(f => f.DateTime >= SelectedDate.AddHours(-i - 1) && f.DateTime < SelectedDate.AddHours(-i)))).ToArray();
+
+
+        ChartSeries cs = new ChartSeries { Name = "Count", Data = counts };
+        _series.Add(cs);
+        // _options.YAxisTicks = 50;
+        loading = false;
+        StateHasChanged();
+    }
+
+    private async Task<IEnumerable<Flight>> GetFlightsAsync()
+    {
+        return await flightsService.GetRecentFlightsAsync(selectedTimeSpan ?? TimeSpan.FromDays(1));
+    }
+}
