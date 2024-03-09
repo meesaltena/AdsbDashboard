@@ -9,10 +9,11 @@
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
-
+<MyMudProviders />
 <PageTitle>Log in</PageTitle>
 
 <MudText Typo="Typo.h6">Log in</MudText>
+<br />
 <MudGrid>
     <MudItem xs="12" sm="7">
         <MudPaper Elevation="4" Class="pa-4">
@@ -29,36 +30,18 @@
                     <ValidationMessage For="() => Input.Email" class="text-danger" />
                 </div>
                 <div class="form-floating mb-3">
-                    @* <MudInputLabel for="password"  class="form-label">Password</MudInputLabel> *@
-@* 
-                    <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Text" 
-                                                         InputType="@PasswordInput"
-                                                         Adornment="Adornment.End" 
-                                                         AdornmentIcon="@PasswordInputIcon" 
-                                                         OnAdornmentClick="ButtonTestclick" 
-                                                         AdornmentAriaLabel="Show Password" />
- *@
-                    <MudTextField @bind-Value="Input.Password" Label="Password" Variant="Variant.Text"
-                                  InputType="@(showPassword ? InputType.Text : InputType.Password)"
-                                  Adornment="Adornment.End"
-                                  AdornmentIcon="@(showPassword ? @Icons.Material.Filled.VisibilityOff : @Icons.Material.Filled.Visibility)"
-                                  OnAdornmentClick="ButtonTestclick"
-                                  AdornmentAriaLabel="Show Password" />
-
-
-@*                     <InputText type="password" @bind-Value="Input.Password" 
-                                                class="form-control" 
-                                                autocomplete="current-password"
-                                                aria-required="true" 
-                                                placeholder="●●●●●●●●●●" /> *@
-
-                 
-                     <ValidationMessage For="() => Input.Password" class="text-danger" />
+                    <MudInputLabel for="password"  class="form-label">Password</MudInputLabel> 
+                    <InputText type="password" @bind-Value="Input.Password"
+                               class="form-control"
+                               autocomplete="current-password"
+                               aria-required="true"
+                               placeholder="●●●●●●●●●●" />
+                    <ValidationMessage For="() => Input.Password" class="text-danger" />
                 </div>
                 <br />
                 <div class="checkbox mb-3">
                     <MudInputLabel class="form-label">
-                        <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
+                        <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input"/>
                         Remember me
                     </MudInputLabel>
                 </div>
@@ -97,6 +80,11 @@
     {
         Console.WriteLine("Clicked!");
         showPassword = !showPassword;
+    }
+
+    private void PasswordChanged(ChangeEventArgs e)
+    {
+      Console.WriteLine(e.Value);
     }
 
     private string? errorMessage;

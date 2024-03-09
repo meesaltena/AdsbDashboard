@@ -1,4 +1,8 @@
-﻿@page "/flights"
+﻿@page "/"
+
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
 @using AdsbMudBlazor.Models
 @using System.Text.Json
 @using AdsbMudBlazor.Service
