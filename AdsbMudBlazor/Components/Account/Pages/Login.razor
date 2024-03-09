@@ -29,8 +29,30 @@
                     <ValidationMessage For="() => Input.Email" class="text-danger" />
                 </div>
                 <div class="form-floating mb-3">
-                    <MudInputLabel for="password"  class="form-label">Password</MudInputLabel>
-                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="●●●●●●●●●●" />
+                    @* <MudInputLabel for="password"  class="form-label">Password</MudInputLabel> *@
+@* 
+                    <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Text" 
+                                                         InputType="@PasswordInput"
+                                                         Adornment="Adornment.End" 
+                                                         AdornmentIcon="@PasswordInputIcon" 
+                                                         OnAdornmentClick="ButtonTestclick" 
+                                                         AdornmentAriaLabel="Show Password" />
+ *@
+                    <MudTextField @bind-Value="Input.Password" Label="Password" Variant="Variant.Text"
+                                  InputType="@(showPassword ? InputType.Text : InputType.Password)"
+                                  Adornment="Adornment.End"
+                                  AdornmentIcon="@(showPassword ? @Icons.Material.Filled.VisibilityOff : @Icons.Material.Filled.Visibility)"
+                                  OnAdornmentClick="ButtonTestclick"
+                                  AdornmentAriaLabel="Show Password" />
+
+
+@*                     <InputText type="password" @bind-Value="Input.Password" 
+                                                class="form-control" 
+                                                autocomplete="current-password"
+                                                aria-required="true" 
+                                                placeholder="●●●●●●●●●●" /> *@
+
+                 
                      <ValidationMessage For="() => Input.Password" class="text-danger" />
                 </div>
                 <br />
@@ -69,6 +91,14 @@
 </MudGrid>
 
 @code {
+    bool showPassword;
+
+    void ButtonTestclick()
+    {
+        Console.WriteLine("Clicked!");
+        showPassword = !showPassword;
+    }
+
     private string? errorMessage;
 
     [CascadingParameter]
