@@ -1,4 +1,7 @@
-﻿<MudNavMenu>
+﻿@implements IDisposable
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+<MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
     <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
     <MudNavLink Href="flights" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Radar">Current flights</MudNavLink>
@@ -8,17 +11,19 @@
 
     <AuthorizeView>
         <Authorized>
-            <MudNavLink Href="Account/Manage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ManageAccounts">Manage account</MudNavLink>
-            <AntiforgeryToken />
-            <MudNavLink Href="Account/Logout" UserAttributes="@hrefAttributes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Logout">Logout</MudNavLink>
-@*             <div class="nav-item px-3">
-                <form action="Account/Logout" method="post">
-                    
-                    <button type="submit" class="nav-link">
-                        <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
-                    </button>
-                </form>
-            </div> *@
+            <MudNavLink itemref="" id="manageAccountLink" Href="Account/Manage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ManageAccounts">
+                Manage account
+            </MudNavLink>
+            <form action="Account/Logout" method="post" class="mud-nav-item mud-ripple">
+                <AntiforgeryToken />
+                <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                <button type="submit" class="mud-nav-link">
+                    <MudIcon Icon="@Icons.Material.Filled.Logout" class="mud-icon-root mud-icon-default mud-svg-icon mud-icon-size-medium mud-nav-link-icon mud-nav-link-icon-default" />
+                    <div class="navMenuInsetText">
+                        Logout
+                    </div>
+                </button>
+            </form>
         </Authorized>
         <NotAuthorized>
             <MudNavLink Href="Account/Register" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AppRegistration">Register account</MudNavLink>
@@ -26,11 +31,29 @@
         </NotAuthorized>
     </AuthorizeView>
 </MudNavMenu>
+<script>
+    window.getClasses = function (id) {
+        var element = document.getElementById(id);
+        return element.className;
+    }
+</script>
+@code {
+    private string? currentUrl;
 
-@code{
-        public Dictionary<string, object> hrefAttributes { get; set; } = 
-        new Dictionary<string, object>() 
-        {
-            { "method", "POST" },
-        };
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
 }

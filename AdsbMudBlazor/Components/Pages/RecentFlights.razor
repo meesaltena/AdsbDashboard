@@ -6,7 +6,9 @@
 @using Color = MudBlazor.Color
 @rendermode InteractiveServer
 @inject FlightsService flightsService
+@using Microsoft.AspNetCore.Authorization
 
+@attribute [Authorize]
 <MyMudProviders />
 <PageTitle>Recent flights</PageTitle>
 
@@ -135,10 +137,6 @@ else
             return true;
         return false;
     }
-
- //    public void OnRowClick(TableRowClickEventArgs<Flight> f)
- //    {
- //    }
 
     private async Task OnTimeChanged(TimeSpan? value)
     {
