@@ -1,0 +1,43 @@
+﻿@implements IDisposable
+@inject NavigationManager NavigationManager
+
+<form action="Account/Logout" method="post" class="mud-nav-item mud-ripple">
+    <AntiforgeryToken />
+    <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+    <button type="submit" class="mud-nav-link">
+        <MudIcon Icon="@Icons.Material.Filled.Logout" class="mud-icon-root mud-icon-default mud-svg-icon mud-icon-size-medium mud-nav-link-icon mud-nav-link-icon-default" />
+        <div class="navMenuInsetText">
+            Logout
+        </div>
+    </button>
+</form>
+
+<style>
+    .navMenuInsetText {
+        text-align: start;
+        margin-left: 12px;
+        margin-inline-start: 12px;
+        margin-inline-end: unset;
+        letter-spacing: 0;
+    }
+</style>
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

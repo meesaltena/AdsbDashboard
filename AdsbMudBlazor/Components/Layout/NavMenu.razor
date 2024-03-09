@@ -1,6 +1,5 @@
-﻿@implements IDisposable
-@inject IJSRuntime JSRuntime
-@inject NavigationManager NavigationManager
+﻿@using AdsbMudBlazor.Components.Account.Pages
+
 <MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
     <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
@@ -14,16 +13,7 @@
             <MudNavLink itemref="" id="manageAccountLink" Href="Account/Manage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ManageAccounts">
                 Manage account
             </MudNavLink>
-            <form action="Account/Logout" method="post" class="mud-nav-item mud-ripple">
-                <AntiforgeryToken />
-                <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                <button type="submit" class="mud-nav-link">
-                    <MudIcon Icon="@Icons.Material.Filled.Logout" class="mud-icon-root mud-icon-default mud-svg-icon mud-icon-size-medium mud-nav-link-icon mud-nav-link-icon-default" />
-                    <div class="navMenuInsetText">
-                        Logout
-                    </div>
-                </button>
-            </form>
+            <LogoutNavLink/>
         </Authorized>
         <NotAuthorized>
             <MudNavLink Href="Account/Register" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AppRegistration">Register account</MudNavLink>
@@ -38,22 +28,5 @@
     }
 </script>
 @code {
-    private string? currentUrl;
 
-    protected override void OnInitialized()
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
-    }
-
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-        StateHasChanged();
-    }
-
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
 }
