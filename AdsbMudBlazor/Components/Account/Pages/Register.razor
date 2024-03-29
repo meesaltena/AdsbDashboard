@@ -31,20 +31,20 @@
                 <ValidationSummary class="text-danger" role="alert" />
                 <div class="form-floating mb-3">
                     <MudInputLabel for="email" class="form-label">Email</MudInputLabel>
-                    <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username"
+                    <InputText @bind-Value="Input.Email" class="form-control" type="text" autocomplete="username"
                                aria-required="true" placeholder="name@example.com" />
                     <ValidationMessage For="() => Input.Email" class="text-danger" />
                 </div>
                 <br />
                 <div class="form-floating mb-3">
                     <MudInputLabel for="password" class="form-label">Password</MudInputLabel>
-                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="new-password"
+                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="password"
                                aria-required="true" placeholder="●●●●●●●●●●" />
                     <ValidationMessage For="() => Input.Password" class="text-danger" />
                 </div>
                 <br />
                 <div class="form-floating mb-3">
-                    <MudInputLabel for="password" class="form-label">Confirm Password</MudInputLabel>
+                    <MudInputLabel for="new-passwor" class="form-label">Confirm Password</MudInputLabel>
                     <InputText type="password" @bind-Value="Input.ConfirmPassword" class="form-control" autocomplete="new-password"
                                 aria-required="true"  placeholder="●●●●●●●●●●" />
                     <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />

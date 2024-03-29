@@ -7,6 +7,7 @@ using AdsbMudBlazor.Utility;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Hosting;
 using MudBlazor.Services;
 using System.Net;
@@ -57,10 +58,11 @@ namespace AdsbMudBlazor
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
-        
-    
+            string _ENVIRONMENT = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? builder.Configuration["ENVIRONMENT"] ?? "Development";
+            bool isDevelopment = _ENVIRONMENT == "Development";
+
             builder.Configuration.AddJsonFile($"appsettings.json");
-            builder.Configuration.AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", true);
+            builder.Configuration.AddJsonFile($"appsettings.{_ENVIRONMENT}.json", true);
 
             var feederBaseurl = "";
 
@@ -71,13 +73,30 @@ namespace AdsbMudBlazor
             Uri feederBaseUri = new Uri(feederBaseurl ?? throw new ArgumentNullException("AddHttpClient Error: FeederOptions:FeederUrl or FeederUrl not set"));
 
 
-            var flightDbConnectionString = builder.Configuration.GetConnectionString("FlightDbConnection") ?? throw new InvalidOperationException("Connection string 'flightDbConnectionString' not found.");
-
+       
 
             builder.Services.Configure<FeederOptions>(builder.Configuration.GetSection(FeederOptions.Position));
             builder.Services.Configure<DbOptions>(builder.Configuration.GetSection(DbOptions.Position));
+
+            //string connectionString = $"server=mysqladsb; userid=adsb; pwd=8vJzIjW3qAO5;port=3306; database=adsb;SslMode=none;allowpublickeyretrieval=True;";
+            var connectionString = builder.Configuration.GetConnectionString("FlightDbConnection") ?? throw new InvalidOperationException("Connection string 'flightDbConnectionString' not found.");
+
+            var serverVersion = new MySqlServerVersion(ServerVersion.AutoDetect(connectionString));
+
             builder.Services.AddDbContextFactory<FlightDbContext>(options =>
-                options.UseSqlite(flightDbConnectionString))
+            {
+                options.UseMySql(connectionString, serverVersion);
+                //options.UseSqliste(flightDbConnectionString);
+                if (isDevelopment)
+                {
+                    options
+                        .LogTo(Console.WriteLine, LogLevel.Information)
+                        .EnableSensitiveDataLogging()
+                        .EnableDetailedErrors();
+                }
+            });
+
+            builder.Services
                 .AddScoped<IFlightFetcher, FlightFetcher>()
                 .AddHostedService<FlightWorker>()
                 .AddScoped<ICoordUtils, CoordUtils>()
@@ -114,7 +133,7 @@ namespace AdsbMudBlazor
             // Add additional endpoints required by the Identity /Account Razor components.
             app.MapAdditionalIdentityEndpoints();
 
-
+            logger.LogInformation("Running RunMigrationsMaybe");
             // run pending migrations
             RunMigrationsMaybe(app.Services, logger, builder.Configuration);
 

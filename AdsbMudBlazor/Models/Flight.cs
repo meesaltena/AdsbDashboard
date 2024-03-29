@@ -1,11 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AdsbMudBlazor.Models
 {
     public class Flight
     {   
-        public int Id { get; set; } 
+        public int Id { get; set; }
+
+        [MaxLength(12)]
         public string ModeS { get; set; } = string.Empty;
         public string Callsign { get; set; } = string.Empty;
         public string Alt { get; set; } = string.Empty;
