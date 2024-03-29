@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AdsbMudBlazor.Migrations.AuthDb
 {
     [DbContext(typeof(AuthDbContext))]
-    [Migration("20240308164522_addAuth")]
-    partial class addAuth
+    [Migration("20240329183537_authinitial_mysql")]
+    partial class authinitial_mysql
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

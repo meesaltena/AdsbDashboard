@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AdsbMudBlazor.Migrations.AuthDb
 {
     /// <inheritdoc />
-    public partial class addAuth : Migration
+    public partial class authinitial_mysql : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
