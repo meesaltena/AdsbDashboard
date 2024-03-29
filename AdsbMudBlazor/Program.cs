@@ -7,6 +7,7 @@ using AdsbMudBlazor.Utility;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using MudBlazor.Services;
 using System.Net;
 
@@ -38,6 +39,7 @@ namespace AdsbMudBlazor
                 .AddIdentityCookies();
 
             var authConnectionString = builder.Configuration.GetConnectionString("AuthDbConnection") ?? throw new InvalidOperationException("Connection string 'AuthDbConnection' not found.");
+
             builder.Services.AddDbContext<AuthDbContext>(options =>
                 options.UseSqlite(authConnectionString));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -49,8 +51,8 @@ namespace AdsbMudBlazor
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
-            // --- setup flight db
-
+        
+    
             builder.Configuration.AddJsonFile($"appsettings.json");
             builder.Configuration.AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", true);
 
@@ -68,8 +70,7 @@ namespace AdsbMudBlazor
 
             builder.Services.Configure<FeederOptions>(builder.Configuration.GetSection(FeederOptions.Position));
             builder.Services.Configure<DbOptions>(builder.Configuration.GetSection(DbOptions.Position));
-            builder.Services
-                .AddDbContextFactory<FlightDbContext>(options =>
+            builder.Services.AddDbContextFactory<FlightDbContext>(options =>
                 options.UseSqlite(flightDbConnectionString))
                 .AddScoped<IFlightFetcher, FlightFetcher>()
                 .AddHostedService<FlightWorker>()
@@ -107,8 +108,30 @@ namespace AdsbMudBlazor
             // Add additional endpoints required by the Identity /Account Razor components.
             app.MapAdditionalIdentityEndpoints();
 
+
+            // run pending migrations
+            if (builder.Configuration.GetValue<bool>("RunMigrations") == true)
+            {
+                using (var scope = app.Services.CreateScope())
+                {
+                    var flightDbContext = scope.ServiceProvider.GetRequiredService<FlightDbContext>();
+                    if (flightDbContext.Database.GetPendingMigrations().Any())
+                    {
+                        flightDbContext.Database.Migrate();
+                    }
+
+                    var authDbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+                    if (authDbContext.Database.GetPendingMigrations().Any())
+                    {
+                        authDbContext.Database.Migrate();
+                    }
+                }
+            }
+
+
             app.Run();
         }
+
         static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs args)
         {
             Exception e = (Exception)args.ExceptionObject;

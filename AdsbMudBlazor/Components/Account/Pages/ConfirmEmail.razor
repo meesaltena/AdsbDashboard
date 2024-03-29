@@ -13,6 +13,14 @@
 <h1>Confirm email</h1>
 <StatusMessage Message="@statusMessage" />
 
+
+@if (showRedirectMessage)
+{
+    <p>
+        You will be redirected in 5 seconds. Click <a href="/">here</a> if you are not redirected automatically."
+    </p>
+}
+
 @code {
     private string? statusMessage;
 
@@ -24,6 +32,8 @@
 
     [SupplyParameterFromQuery]
     private string? Code { get; set; }
+
+    private bool showRedirectMessage { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -41,8 +51,20 @@
         else
         {
             var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
-            var result = await UserManager.ConfirmEmailAsync(user, code);
-            statusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
+            var result = await UserManager.ConfirmEmailAsync(user, code);          
+            if (result.Succeeded)
+            {
+                statusMessage = "Thank you for confirming your email.";
+                showRedirectMessage = true;
+
+                await Task.Delay(5000);
+                RedirectManager.RedirectTo("/");
+
+            }
+            else
+            {
+                statusMessage = "Error confirming your email.";
+            }
         }
     }
 }

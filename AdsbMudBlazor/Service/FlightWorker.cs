@@ -29,26 +29,8 @@ namespace AdsbMudBlazor.Service
             _options = options.Value;
         }
 
-        private async Task<bool> CreateDb()
-        {
-            try
-            {
-                _logger.LogInformation("Ensuring database created");
-                var dbContext = await _contextFactory.CreateDbContextAsync();
-                return await dbContext.Database.EnsureCreatedAsync();
-
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(_options.ToString(), "config: {0}");
-                _logger.LogError(e, "CreateDb Exception: ");
-                throw;
-            }
-        }
-
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await CreateDb();
             try
             {
                 while (!stoppingToken.IsCancellationRequested)
@@ -57,7 +39,6 @@ namespace AdsbMudBlazor.Service
                     var endTime = startTime.AddMilliseconds((1000 * _options.WorkerInterval));
 
                     await UpdateFlightsAndPlanes(stoppingToken);
-
 
                     var timeToDelayLeft = endTime.Subtract(startTime);
                     timeToDelayLeft = (timeToDelayLeft < TimeSpan.FromSeconds(5)) ? TimeSpan.FromSeconds(5) : timeToDelayLeft;
