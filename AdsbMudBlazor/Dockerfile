@@ -1,16 +1,23 @@
 #See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 # https://hub.docker.com/_/microsoft-dotnet-aspnet/
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim-arm64v8 AS base
+
+
+#ARG DOTNET_RUNTIME=mcr.microsoft.com/dotnet/aspnet:8.0
+ARG DOTNET_RUNTIME=mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim-arm64v8 # Raspberry Pi
+ARG DOTNET_SDK=mcr.microsoft.com/dotnet/sdk:8.0 
+
+
+FROM ${DOTNET_RUNTIME} AS base
 USER app
 WORKDIR /app
-#EXPOSE 8080
-#EXPOSE 8081
+
 EXPOSE 5000
 EXPOSE 5001
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM ${DOTNET_SDK} AS build
 ARG BUILD_CONFIGURATION=Release
+
 WORKDIR /src
 COPY ["AdsbMudBlazor/AdsbMudBlazor.csproj", "AdsbMudBlazor/"]
 RUN dotnet restore "./AdsbMudBlazor/./AdsbMudBlazor.csproj"

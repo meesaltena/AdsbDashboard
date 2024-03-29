@@ -19,6 +19,12 @@ namespace AdsbMudBlazor
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            var loggerFactory = LoggerFactory.Create(b => b
+                .AddConsole()
+                .AddDebug()
+                .SetMinimumLevel(LogLevel.Debug));
+            var logger = loggerFactory.CreateLogger<Program>();
+
             builder.Logging.AddConsole();
             // Add services to the container.
             builder.Services.AddRazorComponents()
@@ -110,27 +116,42 @@ namespace AdsbMudBlazor
 
 
             // run pending migrations
-            if (builder.Configuration.GetValue<bool>("RunMigrations") == true)
+            RunMigrationsMaybe(app.Services, logger, builder.Configuration);
+
+            app.Run();
+        }
+
+        private static void RunMigrationsMaybe(IServiceProvider serviceProvider, ILogger logger, ConfigurationManager Configuration)
+        {
+            if (Configuration.GetValue<bool>("RunMigrations") == true)
             {
-                using (var scope = app.Services.CreateScope())
+                using (var scope = serviceProvider.CreateScope())
                 {
                     var flightDbContext = scope.ServiceProvider.GetRequiredService<FlightDbContext>();
-                    if (flightDbContext.Database.GetPendingMigrations().Any())
+                    var pendingF = flightDbContext.Database.GetPendingMigrations();
+                    flightDbContext.Database.Migrate();
+
+                    if (pendingF.Any())
                     {
+                        logger.LogInformation($"Running {pendingF.Count()} pending FlightDbContext migrations.");
                         flightDbContext.Database.Migrate();
                     }
 
                     var authDbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-                    if (authDbContext.Database.GetPendingMigrations().Any())
+                    var pendingA = authDbContext.Database.GetPendingMigrations();
+                    if (pendingA.Any())
                     {
+                        logger.LogInformation($"Running {pendingA.Count()} pending AuthDbContext migrations.");
                         authDbContext.Database.Migrate();
                     }
                 }
             }
-
-
-            app.Run();
+            else
+            {
+                logger.LogInformation("RunMigrations false. Not running migrations.");
+            }
         }
+
 
         static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs args)
         {
