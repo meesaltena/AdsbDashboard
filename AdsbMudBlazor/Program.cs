@@ -108,16 +108,33 @@ namespace AdsbMudBlazor
                 }
             });
 
+            builder.Services.AddMemoryCache();
+            //builder.Services.AddScoped<PlanePhotosCacheHandler>();
+            builder.Services.AddTransient<PlanePhotosCacheHandler>();
+            builder.Services.AddHttpClient().ConfigureHttpClientDefaults(configure =>
+            {
+                configure.AddHttpMessageHandler<PlanePhotosCacheHandler>();
+            });
+            
             builder.Services
                 .AddScoped<IFlightFetcher, FlightFetcher>()
+                //.AddScoped<PlanePhotosService>()
+                //.AddScoped<IPlaneImageService, PlanespottersService>()
                 .AddHostedService<FlightWorker>()
                 .AddScoped<ICoordUtils, CoordUtils>()
                 .AddScoped<FlightsService>()
-                .AddScoped<FeederService>()
-                .AddHttpClient<IFlightFetcher, FlightFetcher>(client =>
-                {
-                    client.BaseAddress = feederBaseUri;
-                });
+                .AddScoped<FeederService>();
+                //.AddHttpClient<IFlightFetcher, FlightFetcher>(client =>
+                //{
+                //    client.BaseAddress = feederBaseUri;
+                //});
+            //builder.Services.AddHttpClient<PlanePhotosService>();
+
+            //builder.Services.AddHttpClient<PlanePhotosService>();
+            //builder.Services.AddHttpClient<IPlaneImageService, PlanespottersService>(client =>
+            //{
+            //    client.BaseAddress = new Uri("https://api.planespotters.net/pub/photos/hex/");
+            //});
 
             AppDomain currDomain = AppDomain.CurrentDomain;
             currDomain.UnhandledException += new UnhandledExceptionEventHandler(UnhandledExceptionHandler);
@@ -155,27 +172,27 @@ namespace AdsbMudBlazor
         {
             //if (Configuration.GetValue<bool>("RunMigrations") == true)
             //{
-            //    using (var scope = serviceProvider.CreateScope())
-            //    {
-            //        var flightDbContext = scope.ServiceProvider.GetRequiredService<FlightDbContext>();
-            //        var pendingF = flightDbContext.Database.GetDbConnection();
-            //        pendingF.DataSource
+            //using (var scope = serviceProvider.CreateScope())
+            //{
+            //    var flightDbContext = scope.ServiceProvider.GetRequiredService<FlightDbContext>();
+            //    var pendingF = flightDbContext.Database.GetDbConnection();
+            //    pendingF.DataSource
             //        //flightDbContext.Database.Migrate();
 
             //        if (pendingF.Count > 0)
-            //        {
-            //            logger.LogInformation($"Running {pendingF.Count()} pending FlightDbContext migrations.");
-            //            flightDbContext.Database.Migrate();
-            //        }
-
-            //        var authDbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-            //        var pendingA = authDbContext.Database.GetPendingMigrations();
-            //        if (pendingA != null && pendingA.Count() > 0)
-            //        {
-            //            logger.LogInformation($"Running {pendingA.Count()} pending AuthDbContext migrations.");
-            //            authDbContext.Database.Migrate();
-            //        }
+            //    {
+            //        logger.LogInformation($"Running {pendingF.Count()} pending FlightDbContext migrations.");
+            //        flightDbContext.Database.Migrate();
             //    }
+
+            //    var authDbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+            //    var pendingA = authDbContext.Database.GetPendingMigrations();
+            //    if (pendingA != null && pendingA.Count() > 0)
+            //    {
+            //        logger.LogInformation($"Running {pendingA.Count()} pending AuthDbContext migrations.");
+            //        authDbContext.Database.Migrate();
+            //    }
+            //}
             //}
             //else
             //{

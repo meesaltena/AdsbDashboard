@@ -20,6 +20,7 @@ namespace AdsbMudBlazor.Service
             _logger = logger;
             _options = options.Value;
             _logger.LogInformation(_options.FeederUrl, "FlightFetcher");
+            _httpClient.BaseAddress = new Uri(_options.FeederUrl);
         }
 
         public async Task<int> GetCurrentlyTrackedFlightsCount(CancellationToken token)

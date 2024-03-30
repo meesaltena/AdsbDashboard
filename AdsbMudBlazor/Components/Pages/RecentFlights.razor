@@ -6,6 +6,9 @@
 @using Color = MudBlazor.Color
 @rendermode InteractiveServer
 @inject FlightsService flightsService
+@* @inject IPlaneImageService planeImageService *@
+@* @inject PlanePhotosService planeImageService *@
+@inject IHttpClientFactory httpClientFactory
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize]
@@ -38,8 +41,8 @@ else
               @ref="_tableRef"
               Elevation="0">
         <ToolBarContent>
-            <MudContainer Class="d-flex justify-space-between flex-grow-1 gap-2" >
-                <MudText Typo="Typo.h5"  Class="mt-3 pr-10" GutterBottom="true">Recent flights</MudText>
+            <MudContainer Class="d-flex justify-space-between flex-grow-1 gap-2">
+                <MudText Typo="Typo.h5" Class="mt-3 pr-10" GutterBottom="true">Recent flights</MudText>
                 <MudTimePicker Style="max-width:150px;margin-bottom: 20px;" Label="Seen within the last minutes:" Class="" TimeChanged="@OnTimeChanged" Time="@selectedTimeSpan" />
                 <MudSwitch Class="mt-5" @bind-Value="@ShowOnlyValidDistance" Size="Size.Small" Label="Show valid distance only" Color="Color.Info" />
                 <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -56,6 +59,7 @@ else
             @* <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=> {if(x.Lat != 0 && x.Long != 0 && x.DistanceKm != null)
         {return x.DistanceKm;} else return 0;})">Distance (km)</MudTableSortLabel></MudTh> *@
             <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=> x.DistanceKm)">Distance (km)</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="MudImage">Image</MudTableSortLabel></MudTh>
         </HeaderContent>
 
 
@@ -76,6 +80,9 @@ else
             <MudTd DataLabel="Long">@context.Long</MudTd>
             <MudTd DataLabel="Distance">
                 @String.Format("{0:0.#}", context.DistanceKm)
+            </MudTd>
+            <MudTd DataLabel="Image">
+                <MudImage Width="200" Height="133" Src="@GetPlaneSpottersImage(context)?.Thumbnail.Src" Alt="image" Elevation="25" Class="rounded-lg" />
             </MudTd>
         </RowTemplate>
         <PagerContent>
@@ -120,6 +127,28 @@ else
             }
         }
     };
+
+    private PlanePhoto? GetPlaneSpottersImage(Flight flight)
+    {
+        using var client = httpClientFactory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get,
+            $"https://api.planespotters.net/pub/photos/hex/{flight.ModeS}");
+        using var response = client.SendAsync(request).Result;
+        
+
+        if (response.IsSuccessStatusCode)
+        {
+            var responseStream = response.Content.ReadAsStringAsync().Result;
+            var planePhotosResponse = JsonSerializer.Deserialize<PlanePhotosResponse>(responseStream,
+                new JsonSerializerOptions{PropertyNameCaseInsensitive = true,});
+
+            return planePhotosResponse?.Photos.FirstOrDefault();
+        }
+
+        return null;
+    }
+
+
     private string searchString1 = "";
 
     private bool FilterFunc(Flight flight) => FilterFunc(flight, searchString1);
