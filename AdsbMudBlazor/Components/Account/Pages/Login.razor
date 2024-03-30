@@ -30,7 +30,7 @@
                     <ValidationMessage For="() => Input.Email" class="text-danger" />
                 </div>
                 <div class="form-floating mb-3">
-                    <MudInputLabel for="password"  class="form-label">Password</MudInputLabel> 
+                    <MudInputLabel for="password" class="form-label">Password</MudInputLabel>
                     <InputText type="password" @bind-Value="Input.Password"
                                class="form-control"
                                autocomplete="current-password"
@@ -39,12 +39,10 @@
                     <ValidationMessage For="() => Input.Password" class="text-danger" />
                 </div>
                 <br />
-                <div class="checkbox mb-3">
-                    <MudInputLabel class="form-label">
-                        <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input"/>
-                        Remember me
-                    </MudInputLabel>
-                </div>
+                <label class="form-label remember-me-label" for="RememberPasswordCheckbox">
+                    <InputCheckbox id="RememberPasswordCheckbox" @bind-Value="Input.RememberMe" class="remember-me-checkbox" />
+                    Remember me
+                </label>
                 <div class="d-flex align-center justify-space-between">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="ml-auto ">Log in</MudButton>
                 </div>
@@ -55,7 +53,7 @@
                     <p>
                         <MudLink href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">
                             Register as a new user
-                            </MudLink>
+                        </MudLink>
                     </p>
                     <p>
                         <MudLink href="Account/ResendEmailConfirmation">Resend email confirmation</MudLink>
@@ -64,14 +62,33 @@
             </EditForm>
         </MudPaper>
     </MudItem>
-@*     <MudItem xs="12" sm="5">
-        <MudPaper Class="pa-4 mud-height-full">
-            <h3>Use another service to log in.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </MudPaper>
-    </MudItem> *@
 </MudGrid>
+<style>
+    .remember-me-div {
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        /* height: 200px; */
+        border: 3px solid green;
+        width: 60%;
+        padding: 10px;
+        /*         text-align: center;
+            vertical-align: middle;
+            display: table-cell; */
+    }
+
+    input[type=checkbox] {
+        vertical-align: middle;
+        position: relative;
+        bottom: 1px;
+    }
+
+    label {
+        display: block;
+    }
+</style>
+
 
 @code {
     bool showPassword;
@@ -80,11 +97,6 @@
     {
         Console.WriteLine("Clicked!");
         showPassword = !showPassword;
-    }
-
-    private void PasswordChanged(ChangeEventArgs e)
-    {
-      Console.WriteLine(e.Value);
     }
 
     private string? errorMessage;

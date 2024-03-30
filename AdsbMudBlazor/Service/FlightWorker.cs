@@ -93,6 +93,10 @@ namespace AdsbMudBlazor.Service
                     Debug.Assert(match.Count() == 1);
 
                     var f = match.FirstOrDefault();
+                    if(f == null)
+                    {
+                        continue;
+                    }
 
                     f.Distance = coordUtils.GetDistanceOrZero(f.Lat, f.Long);
 

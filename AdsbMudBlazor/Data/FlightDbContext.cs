@@ -9,6 +9,7 @@ namespace AdsbMudBlazor.Data
         private readonly FeederOptions _feederOptions;
         private readonly DbOptions _dbOptions;
         private readonly ILogger<FlightDbContext> _logger;
+
         public FlightDbContext(DbContextOptions<FlightDbContext> dbContextOptions, IOptions<FeederOptions> feederOptions, IOptions<DbOptions> dbOptions, ILogger<FlightDbContext> logger)
             : base(dbContextOptions)
         {
@@ -28,7 +29,7 @@ namespace AdsbMudBlazor.Data
             //    _logger.LogWarning("No DatabasePath path provided! using fallback {0}", dbPath);
             //}
             //optionsBuilder.UseSqlite($"Data Source={dbPath}");
-            
+
         }
     }
 }

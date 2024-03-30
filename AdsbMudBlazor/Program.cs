@@ -27,6 +27,11 @@ namespace AdsbMudBlazor
             var logger = loggerFactory.CreateLogger<Program>();
 
             builder.Logging.AddConsole();
+
+            string _ENVIRONMENT = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? builder.Configuration["ENVIRONMENT"] ?? "Development";
+            bool isDevelopment = _ENVIRONMENT == "Development";
+
+
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
@@ -46,9 +51,20 @@ namespace AdsbMudBlazor
                 .AddIdentityCookies();
 
             var authConnectionString = builder.Configuration.GetConnectionString("AuthDbConnection") ?? throw new InvalidOperationException("Connection string 'AuthDbConnection' not found.");
-
+      
+            var serverVersion = new MySqlServerVersion(ServerVersion.AutoDetect(authConnectionString));
             builder.Services.AddDbContext<AuthDbContext>(options =>
-                options.UseSqlite(authConnectionString));
+            {
+                options.UseMySql(authConnectionString, serverVersion);
+                //options.UseSqliste(flightDbConnectionString);
+                if (isDevelopment)
+                {
+                    options
+                        .EnableSensitiveDataLogging()
+                        .EnableDetailedErrors();
+                }
+            });
+
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
@@ -58,8 +74,6 @@ namespace AdsbMudBlazor
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
-            string _ENVIRONMENT = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? builder.Configuration["ENVIRONMENT"] ?? "Development";
-            bool isDevelopment = _ENVIRONMENT == "Development";
 
             builder.Configuration.AddJsonFile($"appsettings.json");
             builder.Configuration.AddJsonFile($"appsettings.{_ENVIRONMENT}.json", true);
@@ -73,24 +87,22 @@ namespace AdsbMudBlazor
             Uri feederBaseUri = new Uri(feederBaseurl ?? throw new ArgumentNullException("AddHttpClient Error: FeederOptions:FeederUrl or FeederUrl not set"));
 
 
-       
-
             builder.Services.Configure<FeederOptions>(builder.Configuration.GetSection(FeederOptions.Position));
             builder.Services.Configure<DbOptions>(builder.Configuration.GetSection(DbOptions.Position));
 
             //string connectionString = $"server=mysqladsb; userid=adsb; pwd=8vJzIjW3qAO5;port=3306; database=adsb;SslMode=none;allowpublickeyretrieval=True;";
-            var connectionString = builder.Configuration.GetConnectionString("FlightDbConnection") ?? throw new InvalidOperationException("Connection string 'flightDbConnectionString' not found.");
+            var flightDbConnectionString = builder.Configuration.GetConnectionString("FlightDbConnection") ?? 
+                throw new InvalidOperationException("Connection string 'flightDbConnectionString' not found.");
 
-            var serverVersion = new MySqlServerVersion(ServerVersion.AutoDetect(connectionString));
+            var flightDbServerVersion = new MySqlServerVersion(ServerVersion.AutoDetect(flightDbConnectionString));
 
             builder.Services.AddDbContextFactory<FlightDbContext>(options =>
             {
-                options.UseMySql(connectionString, serverVersion);
+                options.UseMySql(flightDbConnectionString, flightDbServerVersion);
                 //options.UseSqliste(flightDbConnectionString);
                 if (isDevelopment)
                 {
                     options
-                        .LogTo(Console.WriteLine, LogLevel.Information)
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors();
                 }
@@ -136,39 +148,39 @@ namespace AdsbMudBlazor
             logger.LogInformation("Running RunMigrationsMaybe");
             // run pending migrations
             RunMigrationsMaybe(app.Services, logger, builder.Configuration);
-
             app.Run();
         }
 
         private static void RunMigrationsMaybe(IServiceProvider serviceProvider, ILogger logger, ConfigurationManager Configuration)
         {
-            if (Configuration.GetValue<bool>("RunMigrations") == true)
-            {
-                using (var scope = serviceProvider.CreateScope())
-                {
-                    var flightDbContext = scope.ServiceProvider.GetRequiredService<FlightDbContext>();
-                    var pendingF = flightDbContext.Database.GetPendingMigrations();
-                    flightDbContext.Database.Migrate();
+            //if (Configuration.GetValue<bool>("RunMigrations") == true)
+            //{
+            //    using (var scope = serviceProvider.CreateScope())
+            //    {
+            //        var flightDbContext = scope.ServiceProvider.GetRequiredService<FlightDbContext>();
+            //        var pendingF = flightDbContext.Database.GetDbConnection();
+            //        pendingF.DataSource
+            //        //flightDbContext.Database.Migrate();
 
-                    if (pendingF.Any())
-                    {
-                        logger.LogInformation($"Running {pendingF.Count()} pending FlightDbContext migrations.");
-                        flightDbContext.Database.Migrate();
-                    }
+            //        if (pendingF.Count > 0)
+            //        {
+            //            logger.LogInformation($"Running {pendingF.Count()} pending FlightDbContext migrations.");
+            //            flightDbContext.Database.Migrate();
+            //        }
 
-                    var authDbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-                    var pendingA = authDbContext.Database.GetPendingMigrations();
-                    if (pendingA.Any())
-                    {
-                        logger.LogInformation($"Running {pendingA.Count()} pending AuthDbContext migrations.");
-                        authDbContext.Database.Migrate();
-                    }
-                }
-            }
-            else
-            {
-                logger.LogInformation("RunMigrations false. Not running migrations.");
-            }
+            //        var authDbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+            //        var pendingA = authDbContext.Database.GetPendingMigrations();
+            //        if (pendingA != null && pendingA.Count() > 0)
+            //        {
+            //            logger.LogInformation($"Running {pendingA.Count()} pending AuthDbContext migrations.");
+            //            authDbContext.Database.Migrate();
+            //        }
+            //    }
+            //}
+            //else
+            //{
+            //    logger.LogInformation("RunMigrations false. Not running migrations.");
+            //}
         }
 
 

@@ -141,6 +141,7 @@ else
     private async Task OnTimeChanged(TimeSpan? value)
     {
         selectedTimeSpan = value;
+        await Task.FromResult(Task.CompletedTask);
     }
 
     // private async Task<IEnumerable<Flight>> GetFlights()
