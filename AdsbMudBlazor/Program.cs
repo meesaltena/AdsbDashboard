@@ -110,12 +110,14 @@ namespace AdsbMudBlazor
 
             builder.Services.AddMemoryCache();
             //builder.Services.AddScoped<PlanePhotosCacheHandler>();
-            builder.Services.AddTransient<PlanePhotosCacheHandler>();
-            builder.Services.AddHttpClient().ConfigureHttpClientDefaults(configure =>
-            {
-                configure.AddHttpMessageHandler<PlanePhotosCacheHandler>();
-            });
-            
+            //builder.Services.AddTransient<PlanePhotosCacheHandler>();
+            //builder.Services.AddHttpClient().ConfigureHttpClientDefaults(configure =>
+            //{
+            //    configure.AddHttpMessageHandler<PlanePhotosCacheHandler>();
+            //});
+
+            builder.Services.AddHttpClient();
+            builder.Services.AddTransient<PlanePhotosCacheService>();
             builder.Services
                 .AddScoped<IFlightFetcher, FlightFetcher>()
                 //.AddScoped<PlanePhotosService>()
