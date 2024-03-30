@@ -1,0 +1,42 @@
+﻿@using AdsbMudBlazor.Models
+@using AdsbMudBlazor.Service
+@using System.Text.Json
+@inject PlanePhotosCacheService _planePhotosCacheService;
+@inject IHttpClientFactory httpClientFactory
+
+
+<MudImage Width="200" Height="133" Src="@GetPlaneSpottersImage(Hex)?.Thumbnail.Src" Alt="image" Elevation="25" Class="rounded-lg" />
+
+@code{
+    [Parameter]
+    public string Hex { get; set; }    
+
+    private PlanePhoto? GetPlaneSpottersImage(string hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex))
+        {
+            return null;
+        }
+        var planePhoto = _planePhotosCacheService.GetImageByHex(hex).Result;
+
+        if (planePhoto != null)
+        {
+            return planePhoto;
+        }
+
+        using var client = httpClientFactory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get,
+             $"https://api.planespotters.net/pub/photos/hex/{hex}");
+        using var response = client.SendAsync(request).Result;
+
+        if (response.IsSuccessStatusCode)
+        {
+            var responseStream = response.Content.ReadAsStringAsync().Result;
+            var planePhotosResponse = JsonSerializer.Deserialize<PlanePhotosResponse>(responseStream,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true, });
+
+            return _planePhotosCacheService.SetImageByHex(hex, planePhotosResponse?.Photos.FirstOrDefault());
+        }
+        return null;
+    }
+}

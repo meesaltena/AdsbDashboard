@@ -9,6 +9,7 @@
 @* @inject IPlaneImageService planeImageService *@
 @* @inject PlanePhotosService planeImageService *@
 @inject IHttpClientFactory httpClientFactory
+@inject PlanePhotosCacheService _planePhotosCacheService;
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize]
@@ -82,7 +83,7 @@ else
                 @String.Format("{0:0.#}", context.DistanceKm)
             </MudTd>
             <MudTd DataLabel="Image">
-                <MudImage Width="200" Height="133" Src="@GetPlaneSpottersImage(context)?.Thumbnail.Src" Alt="image" Elevation="25" Class="rounded-lg" />
+                <PlaneImage Hex="@context.ModeS"></PlaneImage>
             </MudTd>
         </RowTemplate>
         <PagerContent>
@@ -127,27 +128,6 @@ else
             }
         }
     };
-
-    private PlanePhoto? GetPlaneSpottersImage(Flight flight)
-    {
-        using var client = httpClientFactory.CreateClient();
-        using var request = new HttpRequestMessage(HttpMethod.Get,
-            $"https://api.planespotters.net/pub/photos/hex/{flight.ModeS}");
-        using var response = client.SendAsync(request).Result;
-        
-
-        if (response.IsSuccessStatusCode)
-        {
-            var responseStream = response.Content.ReadAsStringAsync().Result;
-            var planePhotosResponse = JsonSerializer.Deserialize<PlanePhotosResponse>(responseStream,
-                new JsonSerializerOptions{PropertyNameCaseInsensitive = true,});
-
-            return planePhotosResponse?.Photos.FirstOrDefault();
-        }
-
-        return null;
-    }
-
 
     private string searchString1 = "";
 

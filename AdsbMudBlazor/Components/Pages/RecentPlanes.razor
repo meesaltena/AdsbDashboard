@@ -37,6 +37,7 @@ else
         <HeaderContent>
             <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Plane, object>(x=>x.ModeS)">ICAO</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<Plane, object>(x=>x.LastSeen)">Last seen</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="MudImage">Image</MudTableSortLabel></MudTh>
         </HeaderContent>
 
         <RowTemplate>
@@ -44,7 +45,9 @@ else
                 <MudLink Href="@($"https://www.planespotters.net/hex/{context.ModeS}")">@context.ModeS</MudLink>
             </MudTd>
             <MudTd DataLabel="Last seen">@context.LastSeen</MudTd>
-
+            <MudTd DataLabel="Image">
+                <PlaneImage Hex="@context.ModeS"></PlaneImage>
+            </MudTd>
         </RowTemplate>
         <PagerContent>
             <MudTablePager PageSizeOptions="new int[]{50, 100}" />
