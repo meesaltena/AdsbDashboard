@@ -4,20 +4,39 @@
 @inject PlanePhotosCacheService _planePhotosCacheService;
 @inject IHttpClientFactory httpClientFactory
 
+@if(planePhoto != null)
+{
 
-<MudImage Width="200" Height="133" Src="@GetPlaneSpottersImage(Hex)?.Thumbnail.Src" Alt="image" Elevation="25" Class="rounded-lg" />
+<div title="Aircraft Photo" id="selected_photo" style="width: 257px;">
+    <a class="link" href="@planePhoto.Link" target="_blank" rel="noopener noreferrer">  
+        <MudImage id="planeImage" Width="200" Height="133" Src="@planePhoto?.Thumbnail.Src" Alt="image" Elevation="25" Class="rounded-lg" />
+    </a>
+</div>
+<div id="planeImageCopyrightInfo">
+     <span>Image © @planePhoto?.Photographer</span>
+    
+</div>   
+}
 
 @code{
     [Parameter]
-    public string Hex { get; set; }    
+    public string Hex { get; set; }
 
-    private PlanePhoto? GetPlaneSpottersImage(string hex)
+    private PlanePhoto? planePhoto {get; set;}
+
+    protected override async Task OnInitializedAsync()
+    {
+        planePhoto = await GetPlaneSpottersImage(Hex);
+        await base.OnInitializedAsync();
+    }
+
+    private async Task<PlanePhoto?> GetPlaneSpottersImage(string hex)
     {
         if (string.IsNullOrWhiteSpace(hex))
         {
             return null;
         }
-        var planePhoto = _planePhotosCacheService.GetImageByHex(hex).Result;
+        var planePhoto = await _planePhotosCacheService.GetImageByHex(hex);
 
         if (planePhoto != null)
         {
@@ -27,12 +46,12 @@
         using var client = httpClientFactory.CreateClient();
         using var request = new HttpRequestMessage(HttpMethod.Get,
              $"https://api.planespotters.net/pub/photos/hex/{hex}");
-        using var response = client.SendAsync(request).Result;
+        using var response = await client.SendAsync(request);
 
         if (response.IsSuccessStatusCode)
         {
-            var responseStream = response.Content.ReadAsStringAsync().Result;
-            var planePhotosResponse = JsonSerializer.Deserialize<PlanePhotosResponse>(responseStream,
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            var planePhotosResponse = await JsonSerializer.DeserializeAsync<PlanePhotosResponse>(responseStream,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true, });
 
             return _planePhotosCacheService.SetImageByHex(hex, planePhotosResponse?.Photos.FirstOrDefault());
