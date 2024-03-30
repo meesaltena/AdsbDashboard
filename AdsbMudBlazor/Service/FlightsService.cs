@@ -74,7 +74,7 @@ namespace AdsbMudBlazor.Service
 
                 DateTime oldest = DateTime.UtcNow.Subtract(timeSpan);
 
-                return await context.Flights.Where(f => f.DateTime > oldest).ToListAsync();
+                return await context.Flights.Where(f => f.DateTime >= oldest).ToListAsync();
             }
             catch (Exception e)
             {
@@ -117,7 +117,19 @@ namespace AdsbMudBlazor.Service
             }
         }
 
-
+        public async Task<List<Plane>> GetPlanesAsync(Func<Plane, bool> predicate)
+        {
+            try
+            {
+                await using var context = await _contextFactory.CreateDbContextAsync();
+                return context.Planes.Where(predicate).ToList();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+                throw;
+            }
+        }
         public async Task<List<Plane>> GetPlanesAsync()
         {
             try
