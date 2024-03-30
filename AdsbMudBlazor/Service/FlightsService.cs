@@ -65,6 +65,7 @@ namespace AdsbMudBlazor.Service
                 throw;
             }
         }
+
         public async Task<List<Flight>> GetRecentFlightsAsync(TimeSpan timeSpan)
         {
             try
@@ -81,6 +82,41 @@ namespace AdsbMudBlazor.Service
                 throw;
             }
         }
+
+        public List<Plane> GetRecentDistinctPlanes(TimeSpan timeSpan)
+        {
+            try
+            {
+                 using var context =  _contextFactory.CreateDbContext();
+
+                DateTime oldest = DateTime.UtcNow.Subtract(timeSpan);
+
+                return context.Planes.Where(p => p.LastSeen >= oldest).Distinct().ToList();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+                throw;
+            }
+        }
+
+        public async Task<List<Plane>> GetRecentDistinctPlanesAsync(TimeSpan timeSpan)
+        {
+            try
+            {
+                await using var context = await _contextFactory.CreateDbContextAsync();
+
+                DateTime oldest = DateTime.UtcNow.Subtract(timeSpan);
+
+                return await context.Planes.Where(p => p.LastSeen >= oldest).Distinct().ToListAsync();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+                throw;
+            }
+        }
+
 
         public async Task<List<Plane>> GetPlanesAsync()
         {
