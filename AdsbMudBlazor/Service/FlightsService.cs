@@ -7,12 +7,12 @@ namespace AdsbMudBlazor.Service
     public class FlightsService(IDbContextFactory<FlightDbContext> contextFactory, ILogger<FlightsService> logger)
     {
         private readonly ILogger _logger = logger;
-
+        private readonly IDbContextFactory<FlightDbContext> _contextFactory = contextFactory;
         public async Task<List<Flight>> GetFlightsAsync()
         {
             try
             {
-                await using var context = await contextFactory.CreateDbContextAsync();
+                await using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Flights.ToListAsync();
             }
             catch (Exception e)
@@ -26,7 +26,7 @@ namespace AdsbMudBlazor.Service
         {
             try
             {
-                using var context =  contextFactory.CreateDbContext();
+                using var context = _contextFactory.CreateDbContext();
                 return context.Flights.AsQueryable();
             }
             catch (Exception e)
@@ -40,7 +40,7 @@ namespace AdsbMudBlazor.Service
         {
             try
             {
-                using var context = await contextFactory.CreateDbContextAsync();
+                await using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Flights.CountAsync();
             }
             catch (Exception e)
@@ -53,7 +53,7 @@ namespace AdsbMudBlazor.Service
         {
             try
             {
-                using var context = contextFactory.CreateDbContext();
+                using var context = _contextFactory.CreateDbContext();
 
                 DateTime oldest = DateTime.UtcNow.Subtract(timeSpan);
 
@@ -65,15 +65,15 @@ namespace AdsbMudBlazor.Service
                 throw;
             }
         }
-        public Task<List<Flight>> GetRecentFlightsAsync(TimeSpan timeSpan)
+        public async Task<List<Flight>> GetRecentFlightsAsync(TimeSpan timeSpan)
         {
             try
             {
-                using var context =  contextFactory.CreateDbContext();
+                await using var context = await _contextFactory.CreateDbContextAsync();
 
                 DateTime oldest = DateTime.UtcNow.Subtract(timeSpan);
 
-                return context.Flights.Where(f => f.DateTime > oldest).ToListAsync();
+                return await context.Flights.Where(f => f.DateTime > oldest).ToListAsync();
             }
             catch (Exception e)
             {
@@ -86,7 +86,7 @@ namespace AdsbMudBlazor.Service
         {
             try
             {
-                await using var context = await contextFactory.CreateDbContextAsync();
+                await using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Planes.ToListAsync();
             }
             catch (Exception e)
@@ -100,7 +100,7 @@ namespace AdsbMudBlazor.Service
         {
             try
             {
-                await using var context = await contextFactory.CreateDbContextAsync();
+                await using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Flights.CountAsync();
             }
             catch (Exception e)
@@ -114,7 +114,7 @@ namespace AdsbMudBlazor.Service
         {
             try
             {
-                using var context = contextFactory.CreateDbContext();
+                await using var context = await _contextFactory.CreateDbContextAsync();
                 if (context.Planes.TryGetNonEnumeratedCount(out int count))
                 {
                     return count;
@@ -132,7 +132,7 @@ namespace AdsbMudBlazor.Service
         {
             try
             {
-                using var context =  contextFactory.CreateDbContext();
+                using var context = _contextFactory.CreateDbContext();
                 if (context.Flights.TryGetNonEnumeratedCount(out int count))
                 {
                     return count;
@@ -150,7 +150,7 @@ namespace AdsbMudBlazor.Service
         {
             try
             {
-                using var context = contextFactory.CreateDbContext();
+                using var context = _contextFactory.CreateDbContext();
                 return context.Flights.ToList();
             }
             catch (Exception e)
@@ -164,7 +164,7 @@ namespace AdsbMudBlazor.Service
         {
             try
             {
-                using var context = contextFactory.CreateDbContext();
+                using var context = _contextFactory.CreateDbContext();
                 return context.Planes.ToList();
             }
             catch (Exception e)
