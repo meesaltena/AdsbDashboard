@@ -1,0 +1,153 @@
+﻿@page "/recentflights"
+@using AdsbDashboard.Models
+@using System.Text.Json
+@using AdsbDashboard.Service
+@using AdsbDashboard.Utility
+@using Color = MudBlazor.Color
+@rendermode InteractiveServer
+@inject FlightsService flightsService
+@inject IHttpClientFactory httpClientFactory
+@inject PlanePhotosCacheService _planePhotosCacheService;
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
+<MyMudProviders />
+<PageTitle>Recent flights</PageTitle>
+<CurrentlyTracked />
+
+@if (flights == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="@flights" Hover="true" SortLabel="Sort By"
+              GroupBy="@_groupDefinition"
+              GroupHeaderStyle="background-color:var(--mud-palette-background-grey)"
+              GroupFooterClass="mb-4"
+              Filter="new Func<Flight,bool>(FilterFunc)"
+              Dense="true"
+              @ref="_tableRef"
+              Elevation="0">
+        <ToolBarContent>
+            <MudContainer Class="d-flex justify-space-between flex-grow-1 gap-2">
+                <MudText Typo="Typo.h5" Class="mt-3 pr-10" GutterBottom="true">Recent flights</MudText>
+                <MudTimePicker Style="max-width:150px;margin-bottom: 20px;" Label="Seen within the last minutes:" Class="" TimeChanged="@OnTimeChanged" Time="@selectedTimeSpan" />
+                <MudSwitch Class="mt-5" @bind-Value="@ShowOnlyValidDistance" Size="Size.Small" Label="Show valid distance only" Color="Color.Info" />
+                <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </MudContainer>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Flight, object>(x=>x.ModeS)">ICAO</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=>x.Callsign)">Callsign</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=>x.Alt)">Altitude (ft.)</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=>x.Squawk)">Squawk</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=>x.DateTime)">DateTime</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=>x.Lat)">Lat</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=>x.Long)">Long</MudTableSortLabel></MudTh>
+            @* <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=> {if(x.Lat != 0 && x.Long != 0 && x.DistanceKm != null)
+        {return x.DistanceKm;} else return 0;})">Distance (km)</MudTableSortLabel></MudTh> *@
+            <MudTh><MudTableSortLabel SortBy="new Func<Flight, object>(x=> x.DistanceKm)">Distance (km)</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel T="MudImage">Image</MudTableSortLabel></MudTh>
+        </HeaderContent>
+
+
+        <GroupHeaderTemplate>
+            <MudTh Class="mud-table-cell-custom-group" colspan="12">@($"{context.GroupName}: {context.Key}") </MudTh>
+        </GroupHeaderTemplate>
+        <RowTemplate>
+            <MudTd DataLabel="ICAO">
+                <MudLink Href="@($"https://www.planespotters.net/hex/{context.ModeS}")">@context.ModeS</MudLink>
+            </MudTd>
+            <MudTd DataLabel="Callsign">
+                <MudLink Target="_blank" Href="@($"http://www.flightradar24.com/{context.Callsign}")">@context.Callsign</MudLink>
+            </MudTd>
+            <MudTd DataLabel="Altitude (ft.)">@context.Alt</MudTd>
+            <MudTd DataLabel="Squawk">@context.Squawk</MudTd>
+            <MudTd DataLabel="Squawk">@context.DateTime</MudTd>
+            <MudTd DataLabel="Lat">@context.Lat</MudTd>
+            <MudTd DataLabel="Long">@context.Long</MudTd>
+            <MudTd DataLabel="Distance">
+                @String.Format("{0:0.#}", context.DistanceKm)
+            </MudTd>
+            <MudTd DataLabel="Image">
+                <PlaneImage Hex="@context.ModeS"></PlaneImage>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+        </PagerContent>
+    </MudTable>
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" OnClick="@((args) => _tableRef?.ExpandAllGroups())">Expand all groups</MudButton>
+    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3 ml-3" OnClick="@((args) => _tableRef?.CollapseAllGroups())">Collapse all groups</MudButton>
+
+}
+
+@code {
+    private MudTable<Flight> _tableRef;
+    private TableGroupDefinition<Flight> _groupDefinition = new()
+        {
+            GroupName = "Plane",
+            Indentation = false,
+            Expandable = true,
+            IsInitiallyExpanded = false,
+            Selector = (e) => e.ModeS
+        };
+
+
+    public bool ShowOnlyValidDistance { get; set; } = true;
+    private IEnumerable<Flight> flights
+    {
+        get { return GetFlights(); }
+    }
+    private TimeSpan? selectedTimeSpan { get; set; } = TimeSpan.FromMinutes(5);
+    public Func<Flight, object> SortbyDistance = x =>
+    {
+        {
+            if (x.Lat != 0 && x.Long != 0
+                && x.DistanceKm != null)
+            {
+                return x.DistanceKm;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+    };
+
+    private string searchString1 = "";
+
+    private bool FilterFunc(Flight flight) => FilterFunc(flight, searchString1);
+    private bool FilterFunc(Flight element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.Callsign.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.ModeS.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Squawk.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Alt.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private async Task OnTimeChanged(TimeSpan? value)
+    {
+        selectedTimeSpan = value;
+        await Task.FromResult(Task.CompletedTask);
+    }
+
+    private IEnumerable<Flight> GetFlights()
+    {
+        var f = flightsService.GetRecentFlights(selectedTimeSpan ?? TimeSpan.FromMinutes(5));
+
+        return f.Where(f => (ShowOnlyValidDistance == true
+            ?
+            ((f.DistanceKm != Double.MaxValue) && f.Distance != 0 && f.Distance != null)
+            : true));
+    }
+}

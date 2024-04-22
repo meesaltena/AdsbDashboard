@@ -1,0 +1,61 @@
+﻿@using AdsbDashboard.Models
+@using AdsbDashboard.Service
+@using System.Text.Json
+@inject PlanePhotosCacheService _planePhotosCacheService;
+@inject IHttpClientFactory httpClientFactory
+
+@if(planePhoto != null)
+{
+
+<div title="Aircraft Photo" id="selected_photo" style="width: 257px;">
+    <a class="link" href="@planePhoto.Link" target="_blank" rel="noopener noreferrer">  
+        <MudImage id="planeImage" Width="200" Height="133" Src="@planePhoto?.Thumbnail.Src" Alt="image" Elevation="25" Class="rounded-lg" />
+    </a>
+</div>
+<div id="planeImageCopyrightInfo">
+     <span>Image © @planePhoto?.Photographer</span>
+    
+</div>   
+}
+
+@code{
+    [Parameter]
+    public string Hex { get; set; }
+
+    private PlanePhoto? planePhoto {get; set;}
+
+    protected override async Task OnInitializedAsync()
+    {
+        planePhoto = await GetPlaneSpottersImage(Hex);
+        await base.OnInitializedAsync();
+    }
+
+    private async Task<PlanePhoto?> GetPlaneSpottersImage(string hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex))
+        {
+            return null;
+        }
+        var planePhoto = await _planePhotosCacheService.GetImageByHex(hex);
+
+        if (planePhoto != null)
+        {
+            return planePhoto;
+        }
+
+        using var client = httpClientFactory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get,
+             $"https://api.planespotters.net/pub/photos/hex/{hex}");
+        using var response = await client.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            var planePhotosResponse = await JsonSerializer.DeserializeAsync<PlanePhotosResponse>(responseStream,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true, });
+
+            return _planePhotosCacheService.SetImageByHex(hex, planePhotosResponse?.Photos.FirstOrDefault());
+        }
+        return null;
+    }
+}
