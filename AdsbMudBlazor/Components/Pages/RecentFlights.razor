@@ -6,8 +6,6 @@
 @using Color = MudBlazor.Color
 @rendermode InteractiveServer
 @inject FlightsService flightsService
-@* @inject IPlaneImageService planeImageService *@
-@* @inject PlanePhotosService planeImageService *@
 @inject IHttpClientFactory httpClientFactory
 @inject PlanePhotosCacheService _planePhotosCacheService;
 @using Microsoft.AspNetCore.Authorization
@@ -15,17 +13,7 @@
 @attribute [Authorize]
 <MyMudProviders />
 <PageTitle>Recent flights</PageTitle>
-
-
-
 <CurrentlyTracked />
-
-@* <MudPaper Class="relative d-flex flex-grow-1 flex-wrap justify-center align-center px-8 pb-8 pt-2" MaxWidth="608px" Height="60px" Elevation="0"> *@
-@* <MudPaper  Class="d-flex align-content-start flex-wrap flex-grow-1 gap-4 pa-4" MaxWidth="75%" Height="80px" Elevation="0"> *@
-@* <MudPaper Class="d-flex align-content-start justify-center" MaxWidth="75%" Height="80px" Elevation="0">
-    <MudText Class="  "></MudText>
-
-</MudPaper> *@
 
 @if (flights == null)
 {
@@ -153,18 +141,13 @@ else
         await Task.FromResult(Task.CompletedTask);
     }
 
-    // private async Task<IEnumerable<Flight>> GetFlights()
     private IEnumerable<Flight> GetFlights()
     {
-        // return await flightsService.GetRecentFlightsAsync(selectedTimeSpan ?? TimeSpan.FromMinutes(5));
-        // return flightsService.GetFlightsQueryable().Where(f => f.DateTime > DateTime.UtcNow.Subtract(selectedTimeSpan ?? TimeSpan.FromMinutes(5)));
         var f = flightsService.GetRecentFlights(selectedTimeSpan ?? TimeSpan.FromMinutes(5));
 
         return f.Where(f => (ShowOnlyValidDistance == true
             ?
             ((f.DistanceKm != Double.MaxValue) && f.Distance != 0 && f.Distance != null)
             : true));
-        // DateTime oldest = DateTime.UtcNow.Subtract(timeSpan);
-
     }
 }

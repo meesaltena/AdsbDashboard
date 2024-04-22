@@ -1,5 +1,5 @@
 ﻿<CascadingValue Value=false Name="UsePopoverProvider">
-    <MudThemeProvider @ref="@_mudThemeProvider" IsDarkMode="true" Theme="MyTheme"></MudThemeProvider>
+    <MudThemeProvider @ref="@_mudThemeProvider" IsDarkMode="@_isDarkMode" Theme="MyTheme"></MudThemeProvider>
 </CascadingValue>
 
 @code {
@@ -24,7 +24,9 @@
     {
         if (firstRender)
         {
-            _isDarkMode = await _mudThemeProvider.GetSystemPreference();
+            // _isDarkMode = await _mudThemeProvider.GetSystemPreference();
+            _isDarkMode = false;
+
             StateHasChanged();
         }
     }
